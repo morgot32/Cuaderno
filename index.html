@@ -1123,6 +1123,21 @@
     .panel-section[hidden] {
       display: none !important;
     }
+    .group[hidden] { display: none; }
+    .saved-colors { flex-wrap: wrap; max-width: 520px; gap: 0; }
+    .saved-colors .swatch { width: 20px; height: 20px; padding: 2px; margin: 0; }
+    .saved-colors .swatch span { width: 12px; height: 12px; }
+    .saved-colors.del-mode .swatch { outline: 2px dashed #c0392b; outline-offset: 0; cursor: not-allowed; }
+    .ppanel { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .prow { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .plabel { font: 700 10px ui-monospace, monospace; letter-spacing: .6px; text-transform: uppercase; color: #4a5a50; min-width: 52px; }
+    .pcount { font: 600 11px ui-monospace, monospace; color: #4a5a50; }
+    .phint { font-size: 10px; color: #6a766d; }
+    .pen-chip { flex-direction: column; align-items: flex-start; gap: 0; height: auto !important; padding: 3px 9px !important; border: 1px solid #d3dbd0; background: #fbfcf9; }
+    .pen-chip b { font-size: 11px; color: #263b31; }
+    .pen-chip small { font-size: 9.5px; color: #6a766d; }
+    .pen-chip .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.2); }
+    #savedPens.del-mode .pen-chip { outline: 2px dashed #c0392b; cursor: not-allowed; }
     .dpanel .group { flex-wrap: wrap; }
     .dshape-btn { flex-direction: column; gap: 0; height: auto !important; padding: 3px 5px !important; min-width: 50px; }
     .dshape-btn svg { width: 40px; height: 30px; stroke-width: 2.2; }
@@ -1279,6 +1294,17 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
 </header>
 
 <div id="sessionLoading" hidden style="position:fixed;inset:0;z-index:200;background:#fffdf8ed;place-items:center;font-size:18px"><span>Recuperando sesión…</span></div><style>#sessionLoading:not([hidden]){display:grid}</style>
+<dialog id="penDialog" aria-labelledby="penDialogTitle">
+  <form method="dialog" id="penForm" style="min-width:min(86vw,340px)">
+    <h2 id="penDialogTitle">Guardar lápiz</h2>
+    <p id="penDialogSummary" style="margin:0 0 10px"></p>
+    <label style="display:block;font-size:12px;margin-bottom:6px">Nombre
+      <input id="penNameInput" type="text" maxlength="40" autocomplete="off" placeholder="Ej: Lápiz anotar" style="display:block;width:100%;margin-top:4px;padding:7px 9px;border:1px solid #ced5cc;border-radius:6px;box-sizing:border-box">
+    </label>
+    <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin:8px 0 14px"><input type="checkbox" id="penIncludeColor" checked> Guardar también el color</label>
+    <div class="actions"><button type="button" id="penCancel" class="btn-action">Cancelar</button><button type="submit" id="penSave" class="btn-export" value="ok">Guardar</button></div>
+  </form>
+</dialog>
 <dialog id="installHelp"><h2>Cuaderno como aplicación</h2>
 <p>Windows o Mac: abre el sitio en Chrome o Edge y usa «Instalar aplicación» en el menú del navegador.</p>
 <p>iPad o iPhone: abre el sitio en Safari, toca Compartir y «Añadir a pantalla de inicio».</p>
@@ -1292,6 +1318,7 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
       <button type="button" class="cat-btn active" data-target="panelBrush">✎ Lápices y pinceles</button>
       <button type="button" class="cat-btn" data-target="panelDraw">▱ Figuras y texto</button>
       <button type="button" class="cat-btn" data-target="panelD">⌐ Figuras D</button>
+      <button type="button" class="cat-btn" data-target="panelP">★ Mis lápices</button>
       <button type="button" class="cat-btn" data-target="panelEdit">✂️ Edición</button>
       <button type="button" class="cat-btn" data-target="panelSheet">📄 Hoja</button>
       <button type="button" class="cat-btn" data-target="panelAll">👁️ Todo</button>
@@ -1309,6 +1336,8 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <button class="tool" id="watercolor" aria-pressed="false" title="Acuarela">≈ Acuarela</button>
         <button class="tool" id="blend" aria-pressed="false" title="Mezclador (M)">◌ Mezclar</button>
         <button class="tool" id="vectorPen" aria-pressed="false" title="Pluma vectorial (V)">⌁ Vector</button>
+        <button class="tool" id="taperTool" aria-pressed="false" title="Lápiz variable: grosor de la punta y del final del trazo (Mayús+V, comando LV)">◢ Variable</button>
+        <button class="tool" id="plumaTool" aria-pressed="false" title="Pluma editable: dibuja y luego corrige los nodos con Mover (Mayús+P, comando PL)">✒ Pluma</button>
       </div>
 
       <div class="sep"></div>
@@ -1331,10 +1360,11 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <button class="tool" id="lineTool" aria-pressed="false" title="Línea recta (L)">↗ Línea</button>
         <button class="tool" id="curveTool" aria-pressed="false" title="Curva interactiva (U)">∿ Curva</button>
         <button class="tool" id="rectTool" aria-pressed="false" title="Rectángulo (R)">▭ Rect</button>
+        <button class="tool" id="fillRectTool" aria-pressed="false" title="Rectángulo relleno sin borde · opacidad con el control ◐ (Mayús+R, comando RR)">▮ Relleno</button>
         <label class="radius-wrap" title="Radio de esquinas de rectángulo (0 = esquinas vivas)">
           <span>╭╮</span>
-          <input type="number" id="rectCornerRadius" min="0" max="100" value="0" step="2">
-          <span>px</span>
+          <input type="number" id="rectCornerRadius" min="0" max="100" value="0" step="0.1">
+          <span>cm</span>
         </label>
         <button class="tool" id="circleTool" aria-pressed="false" title="Círculo perfecto (C)">○ Círculo</button>
         <button class="tool" id="ellipseTool" aria-pressed="false" title="Elipse (O)">⬭ Elipse</button>
@@ -1372,8 +1402,19 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         </label>
         <button class="tool" id="picker" aria-pressed="false" title="Cuentagotas: Tomar color">⌕</button>
       </div>
+      <div class="group saved-colors" id="savedColors" aria-label="Colores guardados"></div>
 
       <div class="sep"></div>
+
+      <!-- Lápiz variable y pluma -->
+      <div class="group" id="taperControls" hidden>
+        <label class="dim-input-wrap" title="Grosor en la punta, donde parte el trazo">Punta <input type="number" id="taperStart" min="0.5" max="80" step="0.5" value="8"> px</label>
+        <span style="color:#6a766d">→</span>
+        <label class="dim-input-wrap" title="Grosor donde termina el trazo">Final <input type="number" id="taperEnd" min="0.5" max="80" step="0.5" value="1"> px</label>
+      </div>
+      <div class="group" id="plumaControls" hidden>
+        <label class="dim-input-wrap" title="Más suavizado = menos nodos y curva más limpia">Suavizado <input type="range" id="plumaSmooth" min="1" max="20" step="1" value="6" style="width:70px;accent-color:#365749"><output id="plumaSmoothValue">6</output></label>
+      </div>
 
       <!-- Grosor y Opacidad -->
       <div class="group" title="Grosor de punta">
@@ -1396,6 +1437,23 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <input id="dCommandInput" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="D1…D11 ↵" aria-label="Comando de figura D">
       </label>
       <span class="dhint">Arrastra del punto <b>1</b> al punto <b>2</b>; la figura se estira como un rectángulo.</span>
+    </div>
+
+    <!-- PANEL MIS LÁPICES: colores y lápices guardados con nombre -->
+    <div id="panelP" class="panel-section ppanel" hidden aria-label="Mis lápices y colores">
+      <div class="prow">
+        <span class="plabel">Colores</span>
+        <button class="tool" id="saveColorBtn" title="Guardar el color actual (hasta 20)">＋ Guardar color actual</button>
+        <button class="tool" id="delColorMode" aria-pressed="false" title="Modo quitar: toca un color guardado para eliminarlo">🗑 Quitar</button>
+        <span class="pcount" id="colorCount">0/20</span>
+        <span class="phint">Los colores guardados aparecen junto a la paleta, siempre a la mano.</span>
+      </div>
+      <div class="prow">
+        <span class="plabel">Lápices</span>
+        <div class="group" id="savedPens" aria-label="Lápices guardados"></div>
+        <button class="tool" id="savePenBtn" title="Guarda el lápiz actual: herramienta, grosor, opacidad y color">＋ Guardar lápiz…</button>
+        <button class="tool" id="delPenMode" aria-pressed="false" title="Modo quitar: toca un lápiz guardado para eliminarlo">🗑 Quitar</button>
+      </div>
     </div>
 
     <!-- PANEL 2: EDICIÓN (Mover, Copiar, Espejo, Snaps, Regla, Historial) -->
@@ -1570,10 +1628,15 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <button type="button" id="btnScalePrompt" title="Escalar con factor exacto">🔍 Escalar...</button>
 
         <div class="sep-mini"></div>
+        <label id="selOpacityWrap" class="radius-wrap" title="Opacidad de lo seleccionado">
+          <span>◐</span>
+          <input type="range" id="selOpacity" min="5" max="100" step="5" value="100" style="width:80px;accent-color:#365749">
+          <output id="selOpacityValue" style="min-width:30px">100%</output>
+        </label>
         <div id="selectionRadiusWrap" class="radius-wrap" style="display:none">
           <span>╭╮</span>
-          <input type="number" id="selRectRadius" min="0" max="100" value="0" step="2" style="width:36px">
-          <span>px</span>
+          <input type="number" id="selRectRadius" min="0" max="100" value="0" step="0.1" style="width:40px">
+          <span>cm</span>
         </div>
         <button id="btnEditTextObj" hidden title="Editar texto">✏️ Editar texto</button>
         <button id="btnDeleteObj" class="btn-del-obj" title="Eliminar (Supr)">Eliminar</button>
@@ -1936,6 +1999,7 @@ function paintBackground() {
   drawRedMargins(bgCtx);
 }
 
+let taperStart = 8, taperEnd = 1, plumaSmooth = 6, nodeDrag = null, nodeTap = { time: 0, x: 0, y: 0 };
 let eraserByObject=false, eraserDiameter=24, observations='', profilePreset='beam-normal', profileHatch=true, parallelCount=2;
 let objectEraseGesture=null;
 function showLaser(e){const dot=$('#laserDot');dot.style.left=e.clientX+'px';dot.style.top=e.clientY+'px';dot.hidden=false;}
@@ -2004,9 +2068,11 @@ function objectEraseHit(s,p){
  if(!s.points?.length||s.tool==='eraser'||s.tool==='blend')return false;
  p=untransformPoint(s,p);const tolerance=Math.max(6/zoom,(s.size||3)/2+3/zoom),pts=s.points;
  if(s.tool==='profile')return profileContours(s).some(poly=>poly.some((a,i)=>{const open=poly.closed===false||(poly.dash!==undefined&&!poly.closed);if(open&&i===poly.length-1)return false;return distanceToSegment(p,a,poly[(i+1)%poly.length])<=tolerance;}));
- if(['pen','vector','graphite','marker','highlighter','watercolor','line'].includes(s.tool))return pts.some((a,i)=>distanceToSegment(p,a,pts[i+1]||a)<=tolerance);
+ if(s.tool==='pluma'&&s.nodes){const sm=plumaSamples(s);return sm.some((a,i)=>distanceToSegment(p,a,sm[i+1]||a)<=tolerance);}
+ if(['pen','vector','taper','pluma','graphite','marker','highlighter','watercolor','line'].includes(s.tool))return pts.some((a,i)=>distanceToSegment(p,a,pts[i+1]||a)<=tolerance);
  if(s.tool==='circle'){const a=pts[0],b=pts[1]||a;return Math.abs(Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(b.x-a.x,b.y-a.y))<=tolerance;}
  if(s.tool==='ellipse'){const a=pts[0],b=pts[1]||a,rx=Math.abs(b.x-a.x)/2,ry=Math.abs(b.y-a.y)/2;return rx>0&&ry>0&&Math.abs(Math.hypot((p.x-(a.x+b.x)/2)/rx,(p.y-(a.y+b.y)/2)/ry)-1)*Math.min(rx,ry)<=tolerance;}
+ if(s.tool==='frect'){const a=pts[0],b=pts[1]||a;return p.x>=Math.min(a.x,b.x)-tolerance&&p.x<=Math.max(a.x,b.x)+tolerance&&p.y>=Math.min(a.y,b.y)-tolerance&&p.y<=Math.max(a.y,b.y)+tolerance;}
  if(s.tool==='rect'){const a=pts[0],b=pts[1]||a,poly=[a,{x:b.x,y:a.y},b,{x:a.x,y:b.y}];return poly.some((a,i)=>distanceToSegment(p,a,poly[(i+1)%4])<=tolerance);}
  if(s.tool==='curve'){const a=pts[0],b=pts[1]||a,q=pts[2]||a;let last=a;for(let i=1;i<=48;i++){const t=i/48,u=1-t,next={x:u*u*a.x+2*u*t*q.x+t*t*b.x,y:u*u*a.y+2*u*t*q.y+t*t*b.y};if(distanceToSegment(p,last,next)<=tolerance)return true;last=next;}return false;}
  if(s.tool==='arrow'){const a=pts[0],b=pts[1]||a;return distanceToSegment(p,a,b)<=tolerance;}
@@ -2148,6 +2214,100 @@ function drawCloudShape(c, a, b, sw) {
   c.stroke();
 }
 
+// ---- Lápiz variable: el grosor pasa de la punta (sizeStart) al final (sizeEnd) a lo largo del trazo ----
+function taperRadii(s) {
+  const pts = s.points, n = pts.length, len = [0];
+  for (let i = 1; i < n; i++) len.push(len[i - 1] + Math.hypot(pts[i].x - pts[i - 1].x, pts[i].y - pts[i - 1].y));
+  const total = len[n - 1] || 1, a = (s.sizeStart ?? s.size) / 2, b = (s.sizeEnd ?? s.size) / 2;
+  return pts.map((_, i) => a + (b - a) * (n > 1 ? len[i] / total : 0));
+}
+// Un solo relleno: la opacidad no se oscurece donde el trazo se superpone a sí mismo.
+function variableWidthGeometry(c, pts, radii) {
+  if (!pts.length) return;
+  c.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    const p = pts[i], r = radii[i];
+    c.moveTo(p.x + r, p.y); c.arc(p.x, p.y, r, 0, Math.PI * 2);
+    if (!i) continue;
+    const a = pts[i - 1], ar = radii[i - 1], dx = p.x - a.x, dy = p.y - a.y, len = Math.hypot(dx, dy);
+    if (!len) continue;
+    const nx = -dy / len, ny = dx / len;
+    c.moveTo(a.x + nx * ar, a.y + ny * ar);
+    c.lineTo(a.x - nx * ar, a.y - ny * ar);
+    c.lineTo(p.x - nx * r, p.y - ny * r);
+    c.lineTo(p.x + nx * r, p.y + ny * r);
+    c.closePath();
+  }
+  c.fill();
+}
+
+// ---- Pluma editable: nodos unidos por una curva suave (Catmull-Rom convertida a Bézier) ----
+function plumaBez(pts, i) {
+  const p0 = pts[Math.max(0, i - 1)], p1 = pts[i], p2 = pts[i + 1], p3 = pts[Math.min(pts.length - 1, i + 2)];
+  return { p1, p2, c1: { x: p1.x + (p2.x - p0.x) / 6, y: p1.y + (p2.y - p0.y) / 6 }, c2: { x: p2.x - (p3.x - p1.x) / 6, y: p2.y - (p3.y - p1.y) / 6 } };
+}
+function plumaPath(c, pts) {
+  c.moveTo(pts[0].x, pts[0].y);
+  for (let i = 0; i < pts.length - 1; i++) { const b = plumaBez(pts, i); c.bezierCurveTo(b.c1.x, b.c1.y, b.c2.x, b.c2.y, b.p2.x, b.p2.y); }
+}
+function plumaSamples(s, per = 14) {
+  const pts = s.points, out = [];
+  if (pts.length < 2) return pts.map(p => ({ x: p.x, y: p.y, seg: 0 }));
+  for (let i = 0; i < pts.length - 1; i++) {
+    const b = plumaBez(pts, i);
+    for (let k = 0; k <= per; k++) {
+      const t = k / per, u = 1 - t;
+      out.push({ x: u*u*u*b.p1.x + 3*u*u*t*b.c1.x + 3*u*t*t*b.c2.x + t*t*t*b.p2.x, y: u*u*u*b.p1.y + 3*u*u*t*b.c1.y + 3*u*t*t*b.c2.y + t*t*t*b.p2.y, seg: i });
+    }
+  }
+  return out;
+}
+function nearestOnPluma(s, pt) {
+  const sm = plumaSamples(s, 18); let best = null;
+  for (let i = 0; i < sm.length - 1; i++) {
+    if (sm[i].seg !== sm[i + 1].seg) continue;
+    const q = distancePointSegment(pt, sm[i], sm[i + 1]);
+    if (!best || q.d < best.d) best = { x: q.x, y: q.y, d: q.d, seg: sm[i].seg };
+  }
+  return best;
+}
+// Ramer-Douglas-Peucker: reduce el trazo a mano alzada a unos pocos nodos editables.
+function simplifyRDP(pts, tol) {
+  if (pts.length < 3) return pts.slice();
+  const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+  const stack = [[0, pts.length - 1]];
+  while (stack.length) {
+    const [a, b] = stack.pop(); let maxD = 0, idx = -1;
+    for (let i = a + 1; i < b; i++) {
+      const d = distanceToSegment(pts[i], pts[a], pts[b]);
+      if (d > maxD) { maxD = d; idx = i; }
+    }
+    if (idx > -1 && maxD > tol) { keep[idx] = 1; stack.push([a, idx], [idx, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function strokeToWorld(s, p) {
+  if (!(s.angle || s.flipX || s.flipY)) return { x: p.x, y: p.y };
+  const ctr = getStrokeCenter(s), cos = Math.cos(s.angle || 0), sin = Math.sin(s.angle || 0);
+  const dx = (p.x - ctr.x) * (s.flipX ? -1 : 1), dy = (p.y - ctr.y) * (s.flipY ? -1 : 1);
+  return { x: ctr.x + dx * cos - dy * sin, y: ctr.y + dx * sin + dy * cos };
+}
+// Pasa la rotación/reflejo a las coordenadas de los nodos para poder editarlos sin saltos.
+function bakeTransform(s) {
+  if (!(s.angle || s.flipX || s.flipY)) return;
+  s.points = s.points.map(p => ({ ...p, ...strokeToWorld(s, p) }));
+  s.angle = 0; s.flipX = false; s.flipY = false;
+}
+function drawPlumaNodes(c) {
+  if (tool !== 'select' || selectedStrokes.length !== 1) return;
+  const s = selectedStrokes[0];
+  if (s.tool !== 'pluma' || !s.nodes) return;
+  c.save();
+  c.lineWidth = 1.5 / zoom; c.strokeStyle = '#2b6b55'; c.fillStyle = '#fffdf7';
+  for (const p of s.points) { const w = strokeToWorld(s, p), h = 5 / zoom; c.beginPath(); c.rect(w.x - h, w.y - h, h * 2, h * 2); c.fill(); c.stroke(); }
+  c.restore();
+}
+
 function drawRichText(c, s) {
   if (!s.text) return;
   const fSize = s.fontSize || 28;
@@ -2209,6 +2369,16 @@ function stroke(c, s) {
     drawRichText(c, s);
   } else if (s.tool === 'fill' && s.canvasImage) {
     c.drawImage(s.canvasImage, 0, 0);
+  } else if (s.tool === 'frect') {
+    // Rectángulo relleno: sin borde; el color es el de la tinta y la opacidad la de s.opacity.
+    const a = s.points[0], b = s.points[1] || a;
+    const minX = Math.min(a.x, b.x), minY = Math.min(a.y, b.y);
+    const rw = Math.abs(b.x - a.x), rh = Math.abs(b.y - a.y);
+    const rad = Math.min(s.radius || 0, rw / 2, rh / 2);
+    c.beginPath();
+    if (rad > 0 && typeof c.roundRect === 'function') c.roundRect(minX, minY, rw, rh, rad);
+    else c.rect(minX, minY, rw, rh);
+    c.fill();
   } else if (s.tool === 'rect') {
     const a = s.points[0], b = s.points[1] || a;
     c.lineWidth = s.size;
@@ -2274,6 +2444,11 @@ function stroke(c, s) {
       c.globalAlpha = alpha * op;
       continuousGeometry(c, s);
     }
+  } else if (s.tool === 'taper') {
+    variableWidthGeometry(c, s.points, taperRadii(s));
+  } else if (s.tool === 'pluma') {
+    if (s.nodes && s.points.length > 1) { c.lineWidth = s.size; c.beginPath(); plumaPath(c, s.points); c.stroke(); }
+    else freehandGeometry(c, s);
   } else if (['graphite','marker','highlighter'].includes(s.tool)) {
     c.globalAlpha = alpha * ({ graphite: 0.62, marker: 0.7, highlighter: 0.22 }[s.tool] || 1);
     continuousGeometry(c, s);
@@ -2427,6 +2602,7 @@ function drawPreview() {
 
   if (selectedStrokes.length > 0) {
     drawGroupSelectionBox(previewCtx, selectedStrokes);
+    drawPlumaNodes(previewCtx);
   }
 
   // Dibujar marquesina de selección múltiple
@@ -2505,7 +2681,7 @@ function updateUI() {
     selPanel.hidden = false;
     const isSingle = selectedStrokes.length === 1;
     const singleText = isSingle && selectedStrokes[0].tool === 'text';
-    const singleRect = isSingle && selectedStrokes[0].tool === 'rect';
+    const singleRect = isSingle && ['rect','frect'].includes(selectedStrokes[0].tool);
 
     $('#btnEditTextObj').hidden = !singleText;
     const radiusWrap = $('#selectionRadiusWrap');
@@ -2528,10 +2704,15 @@ function updateUI() {
       badge.textContent = `📏 ${wCm.toFixed(2)} × ${hCm.toFixed(2)} cm (${Math.round(wPx)} × ${Math.round(hPx)} px)`;
     }
 
+    if (document.activeElement !== selOpacityEl) {
+      const op = Math.round((selectedStrokes[0].opacity ?? 1) * 100);
+      selOpacityEl.value = op;
+      $('#selOpacityValue').textContent = op + '%';
+    }
     if (isSingle) {
       const s = selectedStrokes[0];
       const deg = Math.round(((s.angle || 0) * 180 / Math.PI) % 360);
-      $('#selectionLabel').textContent = (s.tool === 'text' ? 'Texto' : s.tool === 'rect' ? 'Rectángulo' : 'Elemento') + (deg !== 0 ? ` (${deg}°)` : '');
+      $('#selectionLabel').textContent = (s.tool === 'text' ? 'Texto' : s.tool === 'rect' ? 'Rectángulo' : s.tool === 'frect' ? 'Rectángulo relleno' : s.tool === 'pluma' ? 'Pluma · arrastra nodos, doble clic agrega/quita' : s.tool === 'taper' ? 'Lápiz variable' : 'Elemento') + (deg !== 0 ? ` (${deg}°)` : '');
     } else {
       $('#selectionLabel').textContent = `${selectedStrokes.length} elementos`;
     }
@@ -2652,7 +2833,7 @@ document.querySelectorAll('.cat-btn').forEach(btn => {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const target = btn.dataset.target;
-    const sections = ['panelBrush', 'panelDraw', 'panelD', 'panelEdit', 'panelSheet'];
+    const sections = ['panelBrush', 'panelDraw', 'panelD', 'panelP', 'panelEdit', 'panelSheet'];
 
     if (target === 'panelAll') {
       sections.forEach(id => {
@@ -2981,7 +3162,7 @@ function flush() {
 
 function appendPoint(e) {
   const p = point(e);
-  if (['rect','circle','ellipse','arrow','cloud','profile'].includes(active.tool)) {
+  if (['rect','frect','circle','ellipse','arrow','cloud','profile'].includes(active.tool)) {
     active.points[1] = p;
   } else if (active.tool === 'curve') {
     if (active.curveStep === 2) {
@@ -3008,6 +3189,13 @@ function finish() {
   if (s.tool === 'pen' && autoStraight && !s.guide && isNearlyStraight(s.points)) {
     s.points = [{ ...s.points[0], p: 0 }, { ...s.points.at(-1), p: 0 }];
     notice('Línea enderezada');
+  }
+
+  if (s.tool === 'pluma' && !s.nodes) {
+    let pts = simplifyRDP(s.points, Math.max(0.5, (s.smooth || 6)) / Math.max(zoom, 0.2));
+    if (pts.length < 2) pts = [pts[0], { ...pts[0], x: pts[0].x + 0.01 }];
+    s.points = pts.map(q => ({ x: q.x, y: q.y, p: 0 }));
+    s.nodes = true;
   }
 
   ensureStrokeId(s);
@@ -3080,7 +3268,7 @@ ink.addEventListener('pointerdown', e => {
   const timeSinceLast = now - lastTapTime;
   const distSinceLast = Math.hypot(e.clientX - lastTapCoords.x, e.clientY - lastTapCoords.y);
 
-  if (timeSinceLast < 320 && distSinceLast < 35 && activeTouchPointers.size === 1) {
+  if (timeSinceLast < 320 && distSinceLast < 35 && activeTouchPointers.size === 1 && !(tool === 'select' && selectedStrokes.length === 1 && selectedStrokes[0].tool === 'pluma')) {
     const pt = point(e);
     const rev = [...currentStrokes()].reverse();
     const hit = rev.find(s => hitTestStroke(s, pt));
@@ -3160,6 +3348,32 @@ ink.addEventListener('pointerdown', e => {
 
   // Manejo de la herramienta Selección (Múltiple y Simple)
   if (tool === 'select') {
+    // 0. Edición de nodos de una pluma seleccionada
+    const plu = (selectedStrokes.length === 1 && selectedStrokes[0].tool === 'pluma' && selectedStrokes[0].nodes) ? selectedStrokes[0] : null;
+    if (plu) {
+      bakeTransform(plu);
+      const now = Date.now(), dbl = now - nodeTap.time < 380 && Math.hypot(e.clientX - nodeTap.x, e.clientY - nodeTap.y) < 26;
+      let idx = -1, bestD = 16 / zoom;
+      plu.points.forEach((q, i) => { const d = Math.hypot(q.x - pt.x, q.y - pt.y); if (d < bestD) { bestD = d; idx = i; } });
+      if (idx >= 0) {
+        if (dbl && plu.points.length > 2) { plu.points.splice(idx, 1); nodeTap.time = 0; render(); scheduleSessionSave(); notice('Nodo eliminado'); return; }
+        nodeDrag = { pointer: e.pointerId, stroke: plu, index: idx };
+        nodeTap = { time: now, x: e.clientX, y: e.clientY };
+        ink.setPointerCapture(e.pointerId);
+        return;
+      }
+      const onCurve = nearestOnPluma(plu, pt);
+      if (dbl && onCurve && onCurve.d < 12 / zoom) {
+        plu.points.splice(onCurve.seg + 1, 0, { x: onCurve.x, y: onCurve.y, p: 0 });
+        nodeDrag = { pointer: e.pointerId, stroke: plu, index: onCurve.seg + 1 };
+        nodeTap.time = 0;
+        ink.setPointerCapture(e.pointerId);
+        render(); notice('Nodo agregado');
+        return;
+      }
+      nodeTap = { time: now, x: e.clientX, y: e.clientY };
+    }
+
     // 1. Manilla de rotación grupal
     if (selectedStrokes.length > 0 && hitTestGroupRotationHandle(selectedStrokes, pt)) {
       const ctr = getGroupCenter(selectedStrokes);
@@ -3244,7 +3458,7 @@ ink.addEventListener('pointerdown', e => {
   ink.setPointerCapture(e.pointerId);
 
   const activeTool = (e.pointerType === 'pen' && (e.buttons & 32)) ? 'eraser' : tool;
-  const brushSize = activeTool === 'eraser' ? eraserDiameter : activeTool === 'blend' ? Math.max(24, size * 8) : size;
+  const brushSize = activeTool === 'eraser' ? eraserDiameter : activeTool === 'blend' ? Math.max(24, size * 8) : activeTool === 'taper' ? Math.max(taperStart, taperEnd) : size;
 
   active = {
     id: 'elem-' + (nextStrokeId++),
@@ -3258,11 +3472,12 @@ ink.addEventListener('pointerdown', e => {
     points: [pt],
     pointer: e.pointerId,
     line: tool === 'line',
-    radius: activeTool === 'rect' ? rectRadius : 0,
+    radius: (activeTool === 'rect' || activeTool === 'frect') ? rectRadius : 0,
+    sizeStart: taperStart, sizeEnd: taperEnd, smooth: plumaSmooth,
     curveStep: 1
   };
 
-  if (['rect','circle','ellipse','arrow','cloud','profile'].includes(active.tool)) {
+  if (['rect','frect','circle','ellipse','arrow','cloud','profile'].includes(active.tool)) {
     active.points.push({ ...pt });
   }
 
@@ -3320,6 +3535,15 @@ ink.addEventListener('pointermove', e => {
   if (isPanning) {
     panX = e.clientX - panStart.x;
     panY = e.clientY - panStart.y;
+    render();
+    return;
+  }
+
+  // Mover un nodo de la pluma
+  if (tool === 'select' && nodeDrag && e.pointerId === nodeDrag.pointer) {
+    e.preventDefault();
+    const pt = point(e), q = nodeDrag.stroke.points[nodeDrag.index];
+    if (q) { q.x = pt.x; q.y = pt.y; }
     render();
     return;
   }
@@ -3383,7 +3607,7 @@ ink.addEventListener('pointermove', e => {
 
   if (!active || e.pointerId !== active.pointer) return;
   e.preventDefault();
-  const samples = ['pen','graphite','marker','highlighter','watercolor'].includes(active.tool) && typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+  const samples = ['pen','graphite','marker','highlighter','watercolor','taper','pluma'].includes(active.tool) && typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
   for (const sample of samples.length ? samples : [e]) appendPoint(sample);
   if (!frame) frame = requestAnimationFrame(flush);
 });
@@ -3404,6 +3628,13 @@ function stopPointerInteraction(e) {
   if (isPanning) {
     isPanning = false;
     ink.style.cursor = (tool === 'pan' || spacePressed) ? 'grab' : 'crosshair';
+    return;
+  }
+
+  if (nodeDrag && e.pointerId === nodeDrag.pointer) {
+    nodeDrag = null;
+    scheduleSessionSave();
+    render();
     return;
   }
 
@@ -3890,7 +4121,7 @@ function setTool(t) {
   tool = t;
   lineMode = t === 'line';
   const toolButtons = {
-    laser:'laserTool',profile:'profileTool',pan: 'toolPan', select: 'toolSelect', pen: 'pen', graphite: 'graphite', marker: 'marker',
+    laser:'laserTool',frect:'fillRectTool',taper:'taperTool',pluma:'plumaTool',profile:'profileTool',pan: 'toolPan', select: 'toolSelect', pen: 'pen', graphite: 'graphite', marker: 'marker',
     highlighter: 'highlighter', watercolor: 'watercolor', eraser: 'eraser',
     blend: 'blend', vector: 'vectorPen', bucket: 'bucket', text: 'textTool',
     line: 'lineTool', curve: 'curveTool', rect: 'rectTool', circle: 'circleTool', ellipse: 'ellipseTool',
@@ -3924,6 +4155,9 @@ function setTool(t) {
     line: 'Línea recta (L)',
     curve: 'Curva interactiva (U) · Arrastra y arquea',
     rect: 'Rectángulo · Arrastra dos esquinas',
+    taper: 'Lápiz variable · grosor de la punta → grosor del final',
+    pluma: 'Pluma editable · dibuja; luego usa Mover para corregir los nodos',
+    frect: 'Rectángulo relleno sin borde · ajusta la opacidad con ◐ antes de dibujar o al seleccionarlo',
     circle: 'Círculo perfecto',
     ellipse: 'Elipse perfecta',
     arrow: 'Flecha conector',
@@ -4122,7 +4356,8 @@ function dIcon(id){
  return `<svg viewBox="0 0 40 32" aria-hidden="true">${runs}${mark(A,'1')}${mark(C,'2')}</svg>`;
 }
 function refreshDButtons(){
- document.querySelectorAll('.dshape-btn').forEach(b=>b.setAttribute('aria-pressed',String(tool==='profile'&&profilePreset===b.dataset.d)));
+ document.querySelectorAll('.dshape-btn[data-d]').forEach(b=>b.setAttribute('aria-pressed',String(tool==='profile'&&profilePreset===b.dataset.d)));
+ document.getElementById('dFillBtn')?.setAttribute('aria-pressed',String(tool==='frect'));
 }
 function activateDShape(id){
  profilePreset=id;$('#profilePreset').value=id;updateProfileOptions();setTool('profile');refreshDButtons();scheduleSessionSave();
@@ -4136,11 +4371,24 @@ for(const id of Object.keys(D_SHAPES)){
  b.innerHTML=dIcon(id)+'<span class="dlabel">'+id+'</span>';
  b.onclick=()=>activateDShape(id);dBox.appendChild(b);
 }
+{
+ const b=document.createElement('button');
+ b.type='button';b.className='tool dshape-btn';b.id='dFillBtn';b.setAttribute('aria-pressed','false');
+ b.title='RR · Rectángulo relleno sin borde (opacidad ajustable)';b.setAttribute('aria-label',b.title);
+ b.innerHTML='<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="6" y="6" width="28" height="18" fill="currentColor" fill-opacity=".45" stroke="none"/></svg><span class="dlabel">RR</span>';
+ b.onclick=()=>$('#fillRectTool').click();dBox.appendChild(b);
+}
 function runDCommand(text){
- const m=String(text).trim().toUpperCase().match(/^D\s*0*(\d+)$/);
+ const raw=String(text).trim().toUpperCase();
+ if(raw==='RR'||raw==='RELLENO'){$('#fillRectTool').click();notice('RR · Rectángulo relleno: arrastra del punto 1 al punto 2');return true;}
+ if(raw==='LV'||raw==='VARIABLE'||raw==='LAPIZ VARIABLE'){$('#taperTool').click();notice('LV · Lápiz variable');return true;}
+ if(raw==='PL'||raw==='PLUMA'){$('#plumaTool').click();notice('PL · Pluma editable');return true;}
+ const named=penPresets.find(p=>p.name.toUpperCase()===raw);
+ if(named){applyPenPreset(named);return true;}
+ const m=raw.match(/^D\s*0*(\d+)$/);
  const id=m?'D'+m[1]:null;
  if(id&&D_SHAPES[id]){activateDShape(id);return true;}
- notice('Comando no reconocido: '+(text||'(vacío)')+'. Disponibles: '+Object.keys(D_SHAPES).join(', '));
+ notice('Comando no reconocido: '+(text||'(vacío)')+'. Disponibles: '+Object.keys(D_SHAPES).join(', ')+', RR, LV, PL o el nombre de un lápiz guardado');
  return false;
 }
 $('#dCommandInput').addEventListener('keydown',e=>{
@@ -4152,8 +4400,106 @@ function focusDCommand(){
  document.querySelector('.cat-btn[data-target="panelD"]').click();
  const i=$('#dCommandInput');i.value='';i.focus();
 }
+function refreshToolOptions(){
+ $('#taperControls').hidden=tool!=='taper';
+ $('#plumaControls').hidden=tool!=='pluma';
+}
 const _setToolBase=setTool;
-setTool=function(t){_setToolBase(t);refreshDButtons();};
+setTool=function(t){_setToolBase(t);refreshDButtons();refreshToolOptions();};
+$('#taperTool').onclick=()=>setTool('taper');
+$('#plumaTool').onclick=()=>setTool('pluma');
+$('#taperStart').oninput=e=>{taperStart=Math.max(0.5,Math.min(80,Number(e.target.value)||0.5));};
+$('#taperEnd').oninput=e=>{taperEnd=Math.max(0.5,Math.min(80,Number(e.target.value)||0.5));};
+$('#plumaSmooth').oninput=e=>{plumaSmooth=Number(e.target.value);$('#plumaSmoothValue').textContent=plumaSmooth;};
+
+// ---- Colores guardados (hasta 20) y lápices guardados con nombre ----
+const COLORS_KEY='cuaderno-colors-v1',PENS_KEY='cuaderno-pens-v1',MAX_COLORS=20,MAX_PENS=40;
+const PEN_TOOLS=['pen','graphite','marker','highlighter','watercolor','vector','taper','pluma','line','curve','rect','frect','circle','ellipse','arrow','cloud'];
+const PEN_TOOL_NAMES={pen:'Bolígrafo',graphite:'Grafito',marker:'Marcador',highlighter:'Resaltador',watercolor:'Acuarela',vector:'Vector',taper:'Variable',pluma:'Pluma',line:'Línea',curve:'Curva',rect:'Rectángulo',frect:'Relleno',circle:'Círculo',ellipse:'Elipse',arrow:'Flecha',cloud:'Nube'};
+function loadList(key){try{const v=JSON.parse(localStorage.getItem(key)||'[]');return Array.isArray(v)?v:[];}catch(e){return [];}}
+function saveList(key,list){try{localStorage.setItem(key,JSON.stringify(list));}catch(e){notice('No se pudo guardar en este navegador.');}}
+let savedColors=loadList(COLORS_KEY).filter(h=>/^#[0-9a-f]{6}$/i.test(h)).slice(0,MAX_COLORS);
+let penPresets=loadList(PENS_KEY).filter(p=>p&&typeof p.name==='string'&&PEN_TOOLS.includes(p.tool)).slice(0,MAX_PENS);
+let delColorMode=false,delPenMode=false;
+function renderSavedColors(){
+ const box=$('#savedColors');box.innerHTML='';box.classList.toggle('del-mode',delColorMode);
+ savedColors.forEach(hex=>{
+  const b=document.createElement('button');b.className='swatch';b.dataset.color=hex;b.style.setProperty('--ink',hex);
+  b.title=hex.toUpperCase()+(delColorMode?' · toca para quitar':'');b.setAttribute('aria-label','Color guardado '+hex);
+  b.setAttribute('aria-pressed',String(hex.toLowerCase()===color.toLowerCase()));b.innerHTML='<span></span>';
+  b.onclick=()=>{
+   if(delColorMode){savedColors=savedColors.filter(x=>x!==hex);saveList(COLORS_KEY,savedColors);renderSavedColors();return;}
+   selectColor(hex);
+  };
+  box.appendChild(b);
+ });
+ $('#colorCount').textContent=savedColors.length+'/'+MAX_COLORS;
+}
+$('#saveColorBtn').onclick=()=>{
+ const hex=color.toLowerCase();
+ if(savedColors.includes(hex)){notice('Ese color ya está guardado.');return;}
+ if(savedColors.length>=MAX_COLORS){notice('Máximo '+MAX_COLORS+' colores: quita alguno con 🗑.');return;}
+ savedColors.push(hex);saveList(COLORS_KEY,savedColors);renderSavedColors();notice('Color '+hex.toUpperCase()+' guardado ('+savedColors.length+'/'+MAX_COLORS+')');
+};
+$('#delColorMode').onclick=()=>{delColorMode=!delColorMode;$('#delColorMode').setAttribute('aria-pressed',String(delColorMode));renderSavedColors();if(delColorMode)notice('Toca un color guardado para quitarlo');};
+
+function penSummary(p){
+ const parts=[PEN_TOOL_NAMES[p.tool]||p.tool];
+ parts.push(p.tool==='taper'?p.sizeStart+'→'+p.sizeEnd+' px':p.size+' px');
+ parts.push(Math.round(p.opacity*100)+'%');
+ return parts.join(' · ');
+}
+function renderSavedPens(){
+ const box=$('#savedPens');box.innerHTML='';box.classList.toggle('del-mode',delPenMode);
+ if(!penPresets.length){const m=document.createElement('span');m.className='phint';m.textContent='Aún no hay lápices guardados.';box.appendChild(m);}
+ penPresets.forEach((p,i)=>{
+  const b=document.createElement('button');b.type='button';b.className='tool pen-chip';
+  b.title=(delPenMode?'Quitar: ':'Aplicar: ')+p.name+' · '+penSummary(p);
+  const dot=p.color?'<span class="dot" style="background:'+p.color+'"></span>':'';
+  const nameEl=document.createElement('b');nameEl.textContent=p.name;
+  const sm=document.createElement('small');sm.textContent=penSummary(p);
+  const top=document.createElement('span');top.innerHTML=dot;top.appendChild(nameEl);
+  b.append(top,sm);
+  b.onclick=()=>{
+   if(delPenMode){penPresets.splice(i,1);saveList(PENS_KEY,penPresets);renderSavedPens();return;}
+   applyPenPreset(p);
+  };
+  box.appendChild(b);
+ });
+}
+function applyPenPreset(p){
+ setTool(p.tool);
+ const sz=$('#size');sz.value=p.size;sz.dispatchEvent(new Event('input'));
+ const op=$('#inkOpacity');op.value=Math.round(p.opacity*100);op.dispatchEvent(new Event('input'));
+ if(p.color)selectColor(p.color);
+ if(p.tool==='taper'){taperStart=p.sizeStart;taperEnd=p.sizeEnd;$('#taperStart').value=taperStart;$('#taperEnd').value=taperEnd;}
+ if(p.tool==='pluma'){plumaSmooth=p.smooth||6;$('#plumaSmooth').value=plumaSmooth;$('#plumaSmoothValue').textContent=plumaSmooth;}
+ notice('Lápiz «'+p.name+'» listo · '+penSummary(p));
+}
+function currentPenSettings(){
+ return {tool,size,opacity:inkOpacity,color,sizeStart:taperStart,sizeEnd:taperEnd,smooth:plumaSmooth};
+}
+$('#savePenBtn').onclick=()=>{
+ if(!PEN_TOOLS.includes(tool)){notice('Elige primero un lápiz o una figura para guardarlo.');return;}
+ const cur=currentPenSettings();
+ $('#penDialogSummary').textContent=penSummary(cur)+' · color '+cur.color.toUpperCase();
+ $('#penNameInput').value='';$('#penIncludeColor').checked=true;
+ $('#penDialog').showModal();setTimeout(()=>$('#penNameInput').focus(),30);
+};
+$('#penCancel').onclick=()=>$('#penDialog').close();
+$('#penForm').addEventListener('submit',e=>{
+ e.preventDefault();
+ const name=$('#penNameInput').value.trim();
+ if(!name){$('#penNameInput').focus();return;}
+ const cur=currentPenSettings(),entry={name,tool:cur.tool,size:cur.size,opacity:cur.opacity,sizeStart:cur.sizeStart,sizeEnd:cur.sizeEnd,smooth:cur.smooth};
+ if($('#penIncludeColor').checked)entry.color=cur.color;
+ const at=penPresets.findIndex(p=>p.name.toLowerCase()===name.toLowerCase());
+ if(at>=0){penPresets[at]=entry;notice('Lápiz «'+name+'» actualizado');}
+ else{if(penPresets.length>=MAX_PENS){notice('Máximo '+MAX_PENS+' lápices: quita alguno con 🗑.');return;}penPresets.push(entry);notice('Lápiz «'+name+'» guardado');}
+ saveList(PENS_KEY,penPresets);renderSavedPens();$('#penDialog').close();
+});
+$('#delPenMode').onclick=()=>{delPenMode=!delPenMode;$('#delPenMode').setAttribute('aria-pressed',String(delPenMode));renderSavedPens();if(delPenMode)notice('Toca un lápiz guardado para quitarlo');};
+renderSavedColors();renderSavedPens();refreshToolOptions();
 $('#eraser').onclick = () => setTool('eraser');
 $('#blend').onclick = () => setTool('blend');
 $('#vectorPen').onclick = () => setTool('vector');
@@ -4162,6 +4508,7 @@ $('#textTool').onclick = () => setTool('text');
 $('#lineTool').onclick = () => setTool('line');
 $('#curveTool').onclick = () => setTool('curve');
 $('#rectTool').onclick = () => setTool('rect');
+$('#fillRectTool').onclick = () => setTool('frect');
 $('#circleTool').onclick = () => setTool('circle');
 $('#ellipseTool').onclick = () => setTool('ellipse');
 $('#arrowTool').onclick = () => setTool('arrow');
@@ -4172,12 +4519,20 @@ $('#rectCornerRadius').oninput = e => {
   rectRadius = Math.round(cmToPx(rectRadiusCm));
 };
 
+const selOpacityEl = $('#selOpacity');
+selOpacityEl.oninput = e => {
+  const v = Math.max(5, Math.min(100, Number(e.target.value) || 100)) / 100;
+  selectedStrokes.forEach(s => { s.opacity = v; });
+  $('#selOpacityValue').textContent = Math.round(v * 100) + '%';
+  render();
+  scheduleSessionSave();
+};
 const selRectRadiusEl = $('#selRectRadius');
 if (selRectRadiusEl) {
   selRectRadiusEl.oninput = e => {
     const valCm = Math.max(0, parseFloat(e.target.value) || 0);
     const valPx = Math.round(cmToPx(valCm));
-    selectedStrokes.forEach(s => { if (s.tool === 'rect') s.radius = valPx; });
+    selectedStrokes.forEach(s => { if (s.tool === 'rect' || s.tool === 'frect') s.radius = valPx; });
     render();
   };
 }
@@ -4665,6 +5020,9 @@ document.addEventListener('keydown',e=>{
  if((e.ctrlKey||e.metaKey)&&['z','y'].includes(k)){e.preventDefault();if(e.shiftKey||k==='y')redo();else undo();return;}
  if(e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
  if(e.shiftKey&&k==='f'){e.preventDefault();toggleCleanView();return;}
+ if(e.shiftKey&&k==='r'){e.preventDefault();$('#fillRectTool').click();return;}
+ if(e.shiftKey&&k==='v'){e.preventDefault();$('#taperTool').click();return;}
+ if(e.shiftKey&&k==='p'){e.preventDefault();$('#plumaTool').click();return;}
  if(e.key==='Enter'&&!/^(BUTTON|A|SUMMARY)$/.test(e.target?.tagName||'')){e.preventDefault();focusDCommand();return;}
  if(k in TOOL_SHORTCUTS){e.preventDefault();pickerMode=false;$('#picker').setAttribute('aria-pressed','false');setTool(TOOL_SHORTCUTS[k][0]);}
  else if(k in ACTION_SHORTCUTS){e.preventDefault();$('#'+ACTION_SHORTCUTS[k][1]).click();}
@@ -4814,7 +5172,7 @@ async function restoreSession(data) {
     $('#pressureEnabled').checked=pressureEnabled;$('#pressureSensitivity').value=pressureSensitivity;$('#pressureValue').textContent=pressureSensitivity+'×';
     document.querySelectorAll('[data-color]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.color.toLowerCase()===color.toLowerCase()));
     document.querySelectorAll('[data-bg]').forEach(x=>x.setAttribute('aria-pressed',false));
-    setTool(['pen','graphite','marker','highlighter','watercolor','vector','line','circle','ellipse','rect','text','pan','select','eraser','blend','curve','arrow','cloud','bucket','profile'].includes(b.tool)?b.tool:'pen');
+    setTool(['pen','graphite','marker','highlighter','watercolor','vector','line','circle','ellipse','rect','frect','taper','pluma','text','pan','select','eraser','blend','curve','arrow','cloud','bucket','profile'].includes(b.tool)?b.tool:'pen');
     setPattern(p.pattern);renderLayerUI();resetView();
     if(!mobileModeEnabled&&data.camera&&[data.camera.zoom,data.camera.panX,data.camera.panY].every(Number.isFinite)){zoom=Math.max(.08,Math.min(5,data.camera.zoom));panX=data.camera.panX;panY=data.camera.panY;render();}
   } finally {sessionRestoring=false;}
