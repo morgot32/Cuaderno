@@ -17,3 +17,7 @@
 - **Snap INT:** ahora funciona (intersección entre líneas) con la herramienta Línea.
 - **Márgenes rojos:** se dibujan una sola vez.
 - **Relleno:** más rápido y con menos memoria.
+
+## Figuras D (comandos)
+Pestaña **⌐ Figuras D** en la barra de herramientas, o escribe el comando: presiona **Enter** fuera de cualquier campo, escribe `D1`, `D2`… `D6`, `D10`, `D11` y Enter. Arrastra del punto **1** (primera esquina) al punto **2** (esquina opuesta): la figura se estira como un rectángulo. Las líneas ocultas (D4 y D5) salen segmentadas. Funcionan con Mover, Rotar, Espejo, Borrar por objetos y se guardan en la sesión.
+Para sumar D7–D9 u otras: agrega una línea en `D_SHAPES` (index.html) y una opción en `#profilePreset`.

@@ -1123,6 +1123,13 @@
     .panel-section[hidden] {
       display: none !important;
     }
+    .dpanel .group { flex-wrap: wrap; }
+    .dshape-btn { flex-direction: column; gap: 0; height: auto !important; padding: 3px 5px !important; min-width: 50px; }
+    .dshape-btn svg { width: 40px; height: 30px; stroke-width: 2.2; }
+    .dshape-btn span.dlabel { font: 700 10px ui-monospace, monospace; letter-spacing: .3px; margin-top: -1px; }
+    .dcmd { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; color: #4a5a50; background: #f1f4ed; border: 1px solid #ced7cb; border-radius: 5px; padding: 2px 6px; }
+    .dcmd input { width: 84px; padding: 3px 5px; border: 1px solid #c0ccc0; border-radius: 3px; font: 600 12px ui-monospace, monospace; text-transform: uppercase; background: #fff; }
+    .dhint { font-size: 10px; color: #6a766d; max-width: 210px; line-height: 1.25; }
     .dim-input-wrap {
       display: inline-flex;
       align-items: center;
@@ -1284,6 +1291,7 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
     <div class="cat-nav" role="tablist" aria-label="Categorías de herramientas">
       <button type="button" class="cat-btn active" data-target="panelBrush">✎ Lápices y pinceles</button>
       <button type="button" class="cat-btn" data-target="panelDraw">▱ Figuras y texto</button>
+      <button type="button" class="cat-btn" data-target="panelD">⌐ Figuras D</button>
       <button type="button" class="cat-btn" data-target="panelEdit">✂️ Edición</button>
       <button type="button" class="cat-btn" data-target="panelSheet">📄 Hoja</button>
       <button type="button" class="cat-btn" data-target="panelAll">👁️ Todo</button>
@@ -1340,6 +1348,7 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
     <select id="profilePreset" aria-label="Figura predeterminada">
       <option value="parallel-horizontal">Paralelas horizontales ☰</option><option value="parallel-vertical">Paralelas verticales Ⅲ</option>
       <option value="beam-normal" selected>Viga normal ┌</option><option value="beam-semi">Viga semi-invertida ├</option><option value="beam-inverted">Viga invertida └</option>
+      <optgroup label="Figuras D"><option value="D1">D1 · Rectángulo cerrado</option><option value="D2">D2 · Abierto a la izquierda ⊐</option><option value="D3">D3 · Abierto abajo ∩</option><option value="D4">D4 · Base + línea oculta</option><option value="D5">D5 · Lado + línea oculta</option><option value="D6">D6 · Dos horizontales</option><option value="D10">D10 · Esquina L</option><option value="D11">D11 · Dos verticales</option></optgroup>
       <option value="steel-i">Acero · I</option><option value="steel-lipped">Acero · C con labios</option><option value="steel-box">Acero · Tubo rectangular □</option><option value="steel-c">Acero · Canal C</option>
     </select>
     <label id="parallelOptions" hidden>Líneas <input id="parallelCount" type="number" min="2" max="20" step="1" value="2" aria-label="Cantidad de líneas paralelas" style="width:56px"></label>
@@ -1376,6 +1385,17 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <input class="opacity" id="inkOpacity" type="range" min="0" max="100" value="100" step="5" aria-label="Opacidad">
         <output id="opacityValue" class="size-value">100%</output>
       </div>
+    </div>
+
+    <!-- PANEL FIGURAS D: figuras elásticas por comando (D1, D2, ...) -->
+    <div id="panelD" class="panel-section dpanel" hidden aria-label="Figuras D">
+      <div class="group" id="dButtons" role="group" aria-label="Figuras D"></div>
+      <div class="sep"></div>
+      <label class="dcmd" title="Escribe el comando (D1, D2, D10...) y presiona Enter. Atajo: Enter fuera de cualquier campo.">
+        <span>Comando</span>
+        <input id="dCommandInput" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="D1…D11 ↵" aria-label="Comando de figura D">
+      </label>
+      <span class="dhint">Arrastra del punto <b>1</b> al punto <b>2</b>; la figura se estira como un rectángulo.</span>
     </div>
 
     <!-- PANEL 2: EDICIÓN (Mover, Copiar, Espejo, Snaps, Regla, Historial) -->
@@ -1930,7 +1950,29 @@ const PROFILE_POLYGONS={
  'steel-c':[[0,0],[1,0],[1,.14],[.14,.14],[.14,.86],[1,.86],[1,1],[0,1]],
  'steel-box':[[0,0],[1,0],[1,1],[0,1]]
 };
+// Figuras D. Esquinas: A = punto 1, C = punto 2, B = (x2,y1), D = (x1,y2).
+// Cada tramo se escribe con las letras de las esquinas que une; dash = línea oculta (segmentada).
+// Para agregar D7, D8, D9... basta con sumar una línea aquí y una opción en #profilePreset.
+const D_SHAPES={
+ D1:{name:'Rectángulo cerrado',runs:[{c:'ABCDA'}]},
+ D2:{name:'Abierto a la izquierda',runs:[{c:'ABCD'}]},
+ D3:{name:'Abierto abajo',runs:[{c:'ADCB'}]},
+ D4:{name:'Base + línea oculta',runs:[{c:'AB'},{c:'DC',dash:true}]},
+ D5:{name:'Lado + línea oculta',runs:[{c:'AD'},{c:'BC',dash:true}]},
+ D6:{name:'Dos horizontales',runs:[{c:'AB'},{c:'DC'}]},
+ D10:{name:'Esquina L',runs:[{c:'ADC'}]},
+ D11:{name:'Dos verticales',runs:[{c:'AD'},{c:'BC'}]}
+};
+for(const k of Object.keys(D_SHAPES))PROFILE_POLYGONS[k]=[];
+function dShapeRuns(s){
+ const a=s.points[0],b=s.points[1]||a,P={A:{x:a.x,y:a.y},B:{x:b.x,y:a.y},C:{x:b.x,y:b.y},D:{x:a.x,y:b.y}};
+ return D_SHAPES[s.preset].runs.map(r=>{
+  const closed=r.c.length>2&&r.c[0]===r.c.at(-1),letters=closed?r.c.slice(0,-1):r.c;
+  const poly=[...letters].map(l=>P[l]);poly.closed=closed;poly.dash=!!r.dash;return poly;
+ });
+}
 function profileContours(s){
+ if(D_SHAPES[s.preset])return dShapeRuns(s);
  const a=s.points[0],b=s.points[1]||a,x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
  if(s.preset==='parallel-horizontal'||s.preset==='parallel-vertical'){
   const count=Math.max(2,Math.min(20,Math.round(Number(s.parallelCount)||2)));
@@ -1940,8 +1982,16 @@ function profileContours(s){
  if(s.preset==='steel-box')contours.push([[.16,.14],[.84,.14],[.84,.86],[.16,.86]]);
  return contours.map(poly=>poly.map(([px,py])=>({x:x+px*w,y:y+py*h})));
 }
-function profilePath(c,contours){c.beginPath();for(const poly of contours){c.moveTo(poly[0].x,poly[0].y);for(const p of poly.slice(1))c.lineTo(p.x,p.y);if(poly.length>2)c.closePath();}}
+function profilePath(c,contours){c.beginPath();for(const poly of contours){c.moveTo(poly[0].x,poly[0].y);for(const p of poly.slice(1))c.lineTo(p.x,p.y);if(poly.closed===true||(poly.closed===undefined&&poly.length>2))c.closePath();}}
 function drawProfile(c,s){
+ if(D_SHAPES[s.preset]){
+  c.lineWidth=s.size;c.lineJoin='round';c.lineCap='round';
+  for(const poly of profileContours(s)){
+   c.setLineDash(poly.dash?[Math.max(7,s.size*4.5),Math.max(5,s.size*3.2)]:[]);
+   profilePath(c,[poly]);c.stroke();
+  }
+  c.setLineDash([]);return;
+ }
  const contours=profileContours(s);profilePath(c,contours);c.lineWidth=s.size;c.stroke();
  if(s.hatch&&s.preset.startsWith('beam-')){
   c.save();profilePath(c,contours);c.clip();const b=getStrokeBounds(s,true);c.lineWidth=Math.max(.7,s.size*.45);c.globalAlpha*=.65;c.beginPath();
@@ -1953,7 +2003,7 @@ function untransformPoint(s,p){const ctr=getStrokeCenter(s),dx=p.x-ctr.x,dy=p.y-
 function objectEraseHit(s,p){
  if(!s.points?.length||s.tool==='eraser'||s.tool==='blend')return false;
  p=untransformPoint(s,p);const tolerance=Math.max(6/zoom,(s.size||3)/2+3/zoom),pts=s.points;
- if(s.tool==='profile')return profileContours(s).some(poly=>poly.some((a,i)=>distanceToSegment(p,a,poly[(i+1)%poly.length])<=tolerance));
+ if(s.tool==='profile')return profileContours(s).some(poly=>poly.some((a,i)=>{const open=poly.closed===false||(poly.dash!==undefined&&!poly.closed);if(open&&i===poly.length-1)return false;return distanceToSegment(p,a,poly[(i+1)%poly.length])<=tolerance;}));
  if(['pen','vector','graphite','marker','highlighter','watercolor','line'].includes(s.tool))return pts.some((a,i)=>distanceToSegment(p,a,pts[i+1]||a)<=tolerance);
  if(s.tool==='circle'){const a=pts[0],b=pts[1]||a;return Math.abs(Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(b.x-a.x,b.y-a.y))<=tolerance;}
  if(s.tool==='ellipse'){const a=pts[0],b=pts[1]||a,rx=Math.abs(b.x-a.x)/2,ry=Math.abs(b.y-a.y)/2;return rx>0&&ry>0&&Math.abs(Math.hypot((p.x-(a.x+b.x)/2)/rx,(p.y-(a.y+b.y)/2)/ry)-1)*Math.min(rx,ry)<=tolerance;}
@@ -2602,7 +2652,7 @@ document.querySelectorAll('.cat-btn').forEach(btn => {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const target = btn.dataset.target;
-    const sections = ['panelBrush', 'panelDraw', 'panelEdit', 'panelSheet'];
+    const sections = ['panelBrush', 'panelDraw', 'panelD', 'panelEdit', 'panelSheet'];
 
     if (target === 'panelAll') {
       sections.forEach(id => {
@@ -4060,6 +4110,50 @@ $('#parallelCount').onchange=e=>{e.target.value=parallelCount;};
 updateProfileOptions();
 $('#profileHatch').onchange=e=>{profileHatch=e.target.checked;scheduleSessionSave();};
 $('#profileTool').onclick=()=>setTool('profile');
+
+// ---- Panel de figuras D y línea de comandos ----
+function dIcon(id){
+ const A=[6,24],B=[34,24],C=[34,6],D=[6,6],P={A,B,C,D};
+ const runs=D_SHAPES[id].runs.map(r=>{
+  const pts=[...r.c].map(l=>P[l].join(',')).join(' ');
+  return `<polyline points="${pts}" fill="none" stroke="currentColor" ${r.dash?'stroke-dasharray="4 3"':''} stroke-linejoin="round" stroke-linecap="round"/>`;
+ }).join('');
+ const mark=(p,t)=>`<path d="M${p[0]-3},${p[1]-3}l6,6M${p[0]+3},${p[1]-3}l-6,6" stroke="#c0392b" stroke-width="1.6" fill="none"/><text x="${p[0]+(t==='1'?-5:5)}" y="${p[1]+(t==='1'?10:-5)}" font-size="8" font-weight="700" fill="#c0392b" stroke="none" text-anchor="middle">${t}</text>`;
+ return `<svg viewBox="0 0 40 32" aria-hidden="true">${runs}${mark(A,'1')}${mark(C,'2')}</svg>`;
+}
+function refreshDButtons(){
+ document.querySelectorAll('.dshape-btn').forEach(b=>b.setAttribute('aria-pressed',String(tool==='profile'&&profilePreset===b.dataset.d)));
+}
+function activateDShape(id){
+ profilePreset=id;$('#profilePreset').value=id;updateProfileOptions();setTool('profile');refreshDButtons();scheduleSessionSave();
+ notice(id+' · '+D_SHAPES[id].name+': arrastra del punto 1 al punto 2');
+}
+const dBox=$('#dButtons');
+for(const id of Object.keys(D_SHAPES)){
+ const b=document.createElement('button');
+ b.type='button';b.className='tool dshape-btn';b.dataset.d=id;b.setAttribute('aria-pressed','false');
+ b.title=id+' · '+D_SHAPES[id].name;b.setAttribute('aria-label',b.title);
+ b.innerHTML=dIcon(id)+'<span class="dlabel">'+id+'</span>';
+ b.onclick=()=>activateDShape(id);dBox.appendChild(b);
+}
+function runDCommand(text){
+ const m=String(text).trim().toUpperCase().match(/^D\s*0*(\d+)$/);
+ const id=m?'D'+m[1]:null;
+ if(id&&D_SHAPES[id]){activateDShape(id);return true;}
+ notice('Comando no reconocido: '+(text||'(vacío)')+'. Disponibles: '+Object.keys(D_SHAPES).join(', '));
+ return false;
+}
+$('#dCommandInput').addEventListener('keydown',e=>{
+ e.stopPropagation();
+ if(e.key==='Enter'){e.preventDefault();if(runDCommand(e.target.value)){e.target.value='';e.target.blur();}}
+ else if(e.key==='Escape'){e.target.value='';e.target.blur();}
+});
+function focusDCommand(){
+ document.querySelector('.cat-btn[data-target="panelD"]').click();
+ const i=$('#dCommandInput');i.value='';i.focus();
+}
+const _setToolBase=setTool;
+setTool=function(t){_setToolBase(t);refreshDButtons();};
 $('#eraser').onclick = () => setTool('eraser');
 $('#blend').onclick = () => setTool('blend');
 $('#vectorPen').onclick = () => setTool('vector');
@@ -4571,6 +4665,7 @@ document.addEventListener('keydown',e=>{
  if((e.ctrlKey||e.metaKey)&&['z','y'].includes(k)){e.preventDefault();if(e.shiftKey||k==='y')redo();else undo();return;}
  if(e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
  if(e.shiftKey&&k==='f'){e.preventDefault();toggleCleanView();return;}
+ if(e.key==='Enter'&&!/^(BUTTON|A|SUMMARY)$/.test(e.target?.tagName||'')){e.preventDefault();focusDCommand();return;}
  if(k in TOOL_SHORTCUTS){e.preventDefault();pickerMode=false;$('#picker').setAttribute('aria-pressed','false');setTool(TOOL_SHORTCUTS[k][0]);}
  else if(k in ACTION_SHORTCUTS){e.preventDefault();$('#'+ACTION_SHORTCUTS[k][1]).click();}
  else if(e.key==='?'){e.preventDefault();$('#shortcutHelp').showModal();}
