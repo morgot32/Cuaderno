@@ -647,12 +647,32 @@
     .layers-body {
       padding: 8px 9px;
       overflow-y: auto;
+      flex: 1 1 auto;
+      min-height: 0;
       max-height: 380px;
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
+    .layers-panel.sized .layers-body { max-height: none; }
     .layers-body.collapsed { display: none; }
+    .layers-panel.sized.is-collapsed { height: auto !important; }
+    .layers-resize {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 22px;
+      height: 22px;
+      cursor: nwse-resize;
+      touch-action: none;
+      border-radius: 0 0 9px 0;
+      background:
+        linear-gradient(135deg, transparent 0 52%, #8a9a90 52% 58%, transparent 58% 70%, #8a9a90 70% 76%, transparent 76% 88%, #8a9a90 88% 94%, transparent 94%);
+    }
+    .layers-resize:hover { background-color: rgba(49,88,77,0.08); }
+    .layers-panel.is-collapsed .layers-resize { display: none; }
+    .layers-panel.resizing { transition: none; box-shadow: 0 8px 28px rgba(30,48,40,0.32); }
+    @media (pointer: coarse) { .layers-resize { width: 34px; height: 34px; } }
     .layers-toolbar-row {
       display: flex;
       justify-content: space-between;
@@ -1228,8 +1248,8 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <option value="legal">Oficio / Legal (8.5 × 14 in)</option>
         <option value="a3_v">A3 Vertical (297 × 420 mm)</option>
         <option value="a3_h">A3 Horizontal (420 × 297 mm)</option>
-        <option value="square">Cuadrado 1:1 (1200 × 1200 px)</option>
-        <option value="free">Libre / Pantalla (1280 × 820 px)</option>
+        <option value="square">Cuadrado 1:1 (25 × 25 cm)</option>
+        <option value="free">Libre / Pantalla (32 × 21 cm)</option>
       </select>
     </div>
 
@@ -1277,7 +1297,7 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <button class="tool" id="pen" aria-pressed="true" title="Bolígrafo (B)"><svg><use href="#i-pen"/></svg></button>
         <button class="tool" id="graphite" aria-pressed="false" title="Lápiz de grafito (G)">✎ Grafito</button>
         <button class="tool" id="marker" aria-pressed="false" title="Marcador">▰ Marcador</button>
-        <button class="tool" id="highlighter" aria-pressed="false" title="Resaltador (H)">▱ Resaltar</button>
+        <button class="tool" id="highlighter" aria-pressed="false" title="Resaltador (K)">▱ Resaltar</button>
         <button class="tool" id="watercolor" aria-pressed="false" title="Acuarela">≈ Acuarela</button>
         <button class="tool" id="blend" aria-pressed="false" title="Mezclador (M)">◌ Mezclar</button>
         <button class="tool" id="vectorPen" aria-pressed="false" title="Pluma vectorial (V)">⌁ Vector</button>
@@ -1420,10 +1440,10 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
       <!-- Dimensiones Personalizadas del Lienzo -->
       <div class="dim-input-wrap" title="Dimensiones exactas del lienzo libre">
         <span>📐</span>
-        <input type="number" id="customSheetW" value="1000" min="200" max="8000" step="50" placeholder="Ancho">
+        <input type="number" id="customSheetW" value="21" min="2" max="100" step="0.5" placeholder="Ancho" aria-label="Ancho en cm">
         <span>×</span>
-        <input type="number" id="customSheetH" value="1414" min="200" max="8000" step="50" placeholder="Alto">
-        <span>px</span>
+        <input type="number" id="customSheetH" value="29.7" min="2" max="100" step="0.5" placeholder="Alto" aria-label="Alto en cm">
+        <span>cm</span>
         <button type="button" class="btn-action" id="btnApplyCustomSheet" style="padding:2px 7px;font-size:10.5px">Aplicar</button>
       </div>
     </div>
@@ -1587,6 +1607,8 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
             <span>CAPAS</span>
           </div>
           <div class="layers-head-actions">
+            <button class="layers-head-btn" id="shrinkLayersBtn" title="Achicar panel" aria-label="Achicar panel de capas">−</button>
+            <button class="layers-head-btn" id="growLayersBtn" title="Agrandar panel" aria-label="Agrandar panel de capas">＋</button>
             <button class="layers-head-btn" id="collapseLayersBtn" title="Minimizar/expandir panel">▾</button>
             <button class="layers-head-btn" id="closeLayersBtn" title="Cerrar panel">✕</button>
           </div>
@@ -1598,6 +1620,7 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
           </div>
           <div id="layerList"></div>
         </div>
+        <div class="layers-resize" id="layersResize" title="Arrastra para agrandar o achicar (doble toque: tamaño original)" role="separator" aria-label="Cambiar tamaño del panel de capas"></div>
       </div>
 
     </div>
@@ -1813,7 +1836,7 @@ function drawPaperSheet(c) {
   c.lineWidth = 1 / zoom;
   c.strokeRect(0, 0, w, h);
 
-  if (paperPattern === 'plain') { drawRedMargins(c); return; }
+  if (paperPattern === 'plain') return;
 
   const dark = isDark(paperColor);
   c.save();
@@ -1835,7 +1858,6 @@ function drawPaperSheet(c) {
   }
 
   c.restore();
-  drawRedMargins(c);
 }
 
 // Guías simétricas sobre cualquier fondo, incluidas las imágenes importadas.
@@ -2374,22 +2396,41 @@ function drawPreview() {
   }
 }
 
+// Cada capa de tinta se dibuja en su propio lienzo y luego se compone: así la goma y el
+// mezclador solo afectan la capa en la que trabajas (antes borraban también las capas de abajo).
+const inkLayerPool = document.createElement('canvas');
+function drawInkLayer(target, il, pxW, pxH, setup, extra) {
+  if (inkLayerPool.width !== pxW || inkLayerPool.height !== pxH) { inkLayerPool.width = pxW; inkLayerPool.height = pxH; }
+  const l = inkLayerPool.getContext('2d');
+  l.setTransform(1, 0, 0, 1, 0, 0);
+  l.globalAlpha = 1;
+  l.globalCompositeOperation = 'source-over';
+  l.clearRect(0, 0, pxW, pxH);
+  if (setup) setup(l);
+  for (const s of visibleInkStrokes(il.strokes)) stroke(l, s);
+  if (extra) stroke(l, extra);
+  target.save();
+  target.setTransform(1, 0, 0, 1, 0, 0);
+  target.globalAlpha = il.opacity ?? 1;
+  target.globalCompositeOperation = 'source-over';
+  target.drawImage(inkLayerPool, 0, 0);
+  target.restore();
+}
+
 function render() {
   const r = paper.getBoundingClientRect();
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, r.width, r.height);
 
   paintBackground();
-  applyCameraTransform(ctx);
 
-  for (const il of inkLayers) {
-    if (il.visible === false) continue;
-    ctx.globalAlpha = il.opacity ?? 1;
-    for (const s of visibleInkStrokes(il.strokes)) stroke(ctx, s);
-  }
-
+  const activeIsErasing = active && ['eraser','blend'].includes(active.tool);
+  inkLayers.forEach((il, idx) => {
+    if (il.visible === false) return;
+    drawInkLayer(ctx, il, ink.width, ink.height, l => applyCameraTransform(l), activeIsErasing && idx === activeInk ? active : null);
+  });
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.globalAlpha = 1;
-  if (active && ['eraser','blend'].includes(active.tool)) stroke(ctx, active);
 
   drawPreview();
   updateUI();
@@ -2514,8 +2555,8 @@ $('#sheetFormatSelect').onchange = e => {
   const wInput = $('#customSheetW');
   const hInput = $('#customSheetH');
   if (currentSheetPreset === 'custom') {
-    const cwCm = Math.max(2, parseFloat(wInput ? wInput.value : 21.0) || 21.0);
-    const chCm = Math.max(2, parseFloat(hInput ? hInput.value : 29.7) || 29.7);
+    const cwCm = Math.min(100, Math.max(2, parseFloat(wInput ? wInput.value : 21.0) || 21.0));
+    const chCm = Math.min(100, Math.max(2, parseFloat(hInput ? hInput.value : 29.7) || 29.7));
     sheetWidth = Math.round(cmToPx(cwCm));
     sheetHeight = Math.round(cmToPx(chCm));
     SHEET_PRESETS.custom.wCm = cwCm;
@@ -2540,8 +2581,8 @@ if (btnApplyCustomSheet) {
   btnApplyCustomSheet.onclick = () => {
     const wInput = $('#customSheetW');
     const hInput = $('#customSheetH');
-    const cwCm = Math.max(2, parseFloat(wInput ? wInput.value : 21.0) || 21.0);
-    const chCm = Math.max(2, parseFloat(hInput ? hInput.value : 29.7) || 29.7);
+    const cwCm = Math.min(100, Math.max(2, parseFloat(wInput ? wInput.value : 21.0) || 21.0));
+    const chCm = Math.min(100, Math.max(2, parseFloat(hInput ? hInput.value : 29.7) || 29.7));
     const sel = $('#sheetFormatSelect');
     if (sel) sel.value = 'custom';
     currentSheetPreset = 'custom';
@@ -2643,6 +2684,16 @@ function distancePointSegment(p, a, b) {
   return { x: a.x + t * dx, y: a.y + t * dy, d: Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy)) };
 }
 
+function segmentIntersection(a, b, c, d) {
+  const r = { x: b.x - a.x, y: b.y - a.y }, q = { x: d.x - c.x, y: d.y - c.y };
+  const den = r.x * q.y - r.y * q.x;
+  if (Math.abs(den) < 1e-9) return null;
+  const t = ((c.x - a.x) * q.y - (c.y - a.y) * q.x) / den;
+  const u = ((c.x - a.x) * r.y - (c.y - a.y) * r.x) / den;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  return { x: a.x + t * r.x, y: a.y + t * r.y };
+}
+
 function snapPoint(p) {
   if (!lineMode) return p;
   const th = 16 / zoom;
@@ -2659,6 +2710,17 @@ function snapPoint(p) {
     for (const [a, b] of ss) {
       const q = distancePointSegment(p, a, b);
       if (q.d < th && (!best || q.d < best.d)) best = q;
+    }
+  } else if (snapMode === 'int') {
+    // Solo se comparan los segmentos cercanos al cursor para no frenar el dibujo.
+    const near = ss.filter(([a, b]) => distancePointSegment(p, a, b).d < th * 3);
+    for (let i = 0; i < near.length && i < 120; i++) {
+      for (let j = i + 1; j < near.length && j < 120; j++) {
+        const q = segmentIntersection(near[i][0], near[i][1], near[j][0], near[j][1]);
+        if (!q) continue;
+        const d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < th && (!best || d < best.d)) best = { x: q.x, y: q.y, d };
+      }
     }
   }
   return best ? { x: best.x, y: best.y, p: 0 } : p;
@@ -2686,8 +2748,7 @@ function floodFill(startX, startY, fillColorHex, fillOpacity) {
   const tCtx = tempCv.getContext('2d');
   for (const il of inkLayers) {
     if (il.visible === false) continue;
-    tCtx.globalAlpha = il.opacity ?? 1;
-    for (const s of visibleInkStrokes(il.strokes)) stroke(tCtx, s);
+    drawInkLayer(tCtx, il, w, h);
   }
 
   const px = Math.round(startX);
@@ -2728,16 +2789,11 @@ function floodFill(startX, startY, fillColorHex, fillOpacity) {
     outData[idx + 2] = fillB;
     outData[idx + 3] = fillA;
 
-    const neighbors = [[curX + 1, curY], [curX - 1, curY], [curX, curY + 1], [curX, curY - 1]];
-    for (const [nx, ny] of neighbors) {
-      if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-        const nPos = ny * w + nx;
-        if (!visited[nPos]) {
-          visited[nPos] = 1;
-          if (matches(nPos * 4)) queue.push(nx, ny);
-        }
-      }
-    }
+    // Sin crear arreglos por píxel: más rápido y con menos memoria en hojas grandes.
+    if (curX + 1 < w) { const n = curY * w + curX + 1; if (!visited[n]) { visited[n] = 1; if (matches(n * 4)) queue.push(curX + 1, curY); } }
+    if (curX > 0)     { const n = curY * w + curX - 1; if (!visited[n]) { visited[n] = 1; if (matches(n * 4)) queue.push(curX - 1, curY); } }
+    if (curY + 1 < h) { const n = (curY + 1) * w + curX; if (!visited[n]) { visited[n] = 1; if (matches(n * 4)) queue.push(curX, curY + 1); } }
+    if (curY > 0)     { const n = (curY - 1) * w + curX; if (!visited[n]) { visited[n] = 1; if (matches(n * 4)) queue.push(curX, curY - 1); } }
   }
 
   outCtx.putImageData(outImgData, 0, 0);
@@ -3406,8 +3462,93 @@ layersHead.addEventListener('pointercancel', stopPanelDrag);
 $('#collapseLayersBtn').onclick = () => {
   const body = $('#layersBody');
   const collapsed = body.classList.toggle('collapsed');
+  layersPanel.classList.toggle('is-collapsed', collapsed);
   $('#collapseLayersBtn').textContent = collapsed ? '▸' : '▾';
 };
+
+// ---- Tamaño del panel de capas (arrastrar esquina, botones − ＋, doble toque = original) ----
+const LAYERS_SIZE_KEY = 'cuaderno-layers-size-v1';
+const LAYERS_MIN = { w: 190, h: 120 };
+const LAYERS_DEFAULT_W = 250;
+function layersBounds() {
+  const pr = paper.getBoundingClientRect();
+  return { maxW: Math.max(LAYERS_MIN.w, pr.width - 10), maxH: Math.max(LAYERS_MIN.h, pr.height - 10) };
+}
+function applyLayersSize(w, h, save = true) {
+  const { maxW, maxH } = layersBounds();
+  w = Math.round(Math.max(LAYERS_MIN.w, Math.min(maxW, w)));
+  h = Math.round(Math.max(LAYERS_MIN.h, Math.min(maxH, h)));
+  layersPanel.classList.add('sized');
+  layersPanel.style.width = w + 'px';
+  layersPanel.style.height = h + 'px';
+  layersPanel.style.maxHeight = 'none';
+  keepLayersInside();
+  if (save) { try { localStorage.setItem(LAYERS_SIZE_KEY, JSON.stringify({ w, h })); } catch (e) {} }
+}
+function keepLayersInside() {
+  const pr = paper.getBoundingClientRect();
+  if (!layersPanel.style.left) return;
+  const x = parseFloat(layersPanel.style.left) || 0, y = parseFloat(layersPanel.style.top) || 0;
+  layersPanel.style.left = Math.max(5, Math.min(pr.width - layersPanel.offsetWidth - 5, x)) + 'px';
+  layersPanel.style.top = Math.max(5, Math.min(pr.height - 45, y)) + 'px';
+}
+function resetLayersSize() {
+  layersPanel.classList.remove('sized');
+  layersPanel.style.width = '';
+  layersPanel.style.height = '';
+  layersPanel.style.maxHeight = '';
+  try { localStorage.removeItem(LAYERS_SIZE_KEY); } catch (e) {}
+  keepLayersInside();
+}
+function stepLayersSize(factor) {
+  const r = layersPanel.getBoundingClientRect();
+  applyLayersSize(r.width * factor, r.height * factor);
+}
+$('#growLayersBtn').onclick = () => stepLayersSize(1.2);
+$('#shrinkLayersBtn').onclick = () => stepLayersSize(1 / 1.2);
+
+const layersResize = $('#layersResize');
+let layersResizeDrag = null;
+layersResize.addEventListener('pointerdown', e => {
+  e.preventDefault(); e.stopPropagation();
+  layersResize.setPointerCapture(e.pointerId);
+  const pr = paper.getBoundingClientRect(), r = layersPanel.getBoundingClientRect();
+  // Anclar por arriba-izquierda para que crezca hacia abajo y a la derecha.
+  layersPanel.style.left = (r.left - pr.left) + 'px';
+  layersPanel.style.top = (r.top - pr.top) + 'px';
+  layersPanel.style.right = 'auto';
+  layersPanel.classList.add('resizing');
+  layersResizeDrag = { pointer: e.pointerId, startX: e.clientX, startY: e.clientY, w: r.width, h: r.height, left: r.left - pr.left, top: r.top - pr.top };
+});
+layersResize.addEventListener('pointermove', e => {
+  const d = layersResizeDrag;
+  if (!d || d.pointer !== e.pointerId) return;
+  e.preventDefault();
+  const pr = paper.getBoundingClientRect();
+  const maxW = pr.width - d.left - 5, maxH = pr.height - d.top - 5;
+  const w = Math.max(LAYERS_MIN.w, Math.min(maxW, d.w + e.clientX - d.startX));
+  const h = Math.max(LAYERS_MIN.h, Math.min(maxH, d.h + e.clientY - d.startY));
+  applyLayersSize(w, h, false);
+});
+function stopLayersResize(e) {
+  if (layersResizeDrag?.pointer !== e.pointerId) return;
+  layersResizeDrag = null;
+  layersPanel.classList.remove('resizing');
+  const r = layersPanel.getBoundingClientRect();
+  applyLayersSize(r.width, r.height, true);
+}
+layersResize.addEventListener('pointerup', stopLayersResize);
+layersResize.addEventListener('pointercancel', stopLayersResize);
+layersResize.addEventListener('dblclick', resetLayersSize);
+
+try {
+  const savedLayersSize = JSON.parse(localStorage.getItem(LAYERS_SIZE_KEY) || 'null');
+  if (savedLayersSize && Number.isFinite(savedLayersSize.w) && Number.isFinite(savedLayersSize.h)) applyLayersSize(savedLayersSize.w, savedLayersSize.h, false);
+} catch (e) {}
+window.addEventListener('resize', () => {
+  if (layersPanel.classList.contains('sized')) { const r = layersPanel.getBoundingClientRect(); applyLayersSize(r.width, r.height, false); }
+  else keepLayersInside();
+});
 
 $('#closeLayersBtn').onclick = () => { layersPanel.style.display = 'none'; };
 $('#toggleLayersBtn').onclick = () => {
@@ -4365,10 +4506,7 @@ $('#export').onclick = async () => {
 
   // Tinta
   inkLayers.forEach(il => {
-    if (il.visible !== false) {
-      c.globalAlpha = il.opacity ?? 1;
-      visibleInkStrokes(il.strokes).forEach(s => stroke(c, s));
-    }
+    if (il.visible !== false) drawInkLayer(c, il, out.width, out.height, l => l.scale(exportScale, exportScale));
   });
 
   out.toBlob(blob => {
