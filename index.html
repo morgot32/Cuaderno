@@ -1,0 +1,4652 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#30534a">
+  <meta name="description" content="Tu espacio para escribir y dibujar. Libreta táctil con formatos estandarizados, márgenes escolares, capas arrastrables y zoom.">
+  <title>Cuaderno · Tu espacio en papel</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='5' y='3' width='23' height='27' rx='4' fill='%232d5149'/%3E%3Cpath d='M11 3v27M16 11h7M16 16h7' stroke='%23fffdf7' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@400;700&family=Fira+Code:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Roboto:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #eeece7;
+      color: #303732;
+      font: 14px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; border: 0; background: none; color: inherit; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid #30534a;
+      outline-offset: 2px;
+    }
+    button:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    header {
+      height: 56px;
+      padding: 0 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #deddd5;
+      background: #f6f5f1;
+      flex-shrink: 0;
+      z-index: 12;
+    }
+    .brand { display: flex; gap: 10px; align-items: center; }
+    .mark {
+      background: #30534a;
+      color: #fffdf7;
+      width: 32px;
+      height: 36px;
+      border-radius: 6px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px rgba(48,83,74,0.18);
+    }
+    .brand h1 {
+      font-family: Georgia, serif;
+      font-size: 19px;
+      font-weight: 400;
+      margin: 0;
+      letter-spacing: -0.5px;
+    }
+    .brand small {
+      font-size: 8.5px;
+      letter-spacing: 1.5px;
+      color: #8a8c82;
+      display: block;
+      margin-top: 1px;
+    }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+
+    .sheet-select-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #e8ece5;
+      border: 1px solid #ced5cc;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #2e453c;
+    }
+    .sheet-select-wrap select {
+      background: transparent;
+      border: none;
+      font-size: 11px;
+      font-weight: 600;
+      color: #1f352d;
+      cursor: pointer;
+      outline: none;
+    }
+
+    .btn-action {
+      background: #e8ebe4;
+      color: #2c4c43;
+      padding: 6px 11px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid #cfd5cc;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .btn-action:hover { background: #dce3d8; }
+    .btn-action.active-mode {
+      background: #275446;
+      color: #fff;
+      border-color: #1e4438;
+      box-shadow: 0 2px 6px rgba(39, 84, 70, 0.25);
+    }
+    .btn-export {
+      background: #30534a;
+      color: #fffdf7;
+      padding: 7px 13px;
+      border-radius: 6px;
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 500;
+      transition: background 0.15s;
+    }
+    .btn-export:hover { background: #233f38; }
+
+    .btn-ai {
+      background: linear-gradient(135deg, #274b41 0%, #1e3d34 100%);
+      color: #ebfaf2;
+      border: 1px solid #4a8271;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(39, 75, 65, 0.25);
+      transition: all 0.2s ease;
+    }
+    .btn-ai:hover {
+      background: linear-gradient(135deg, #305e52 0%, #264e43 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(39, 75, 65, 0.35);
+    }
+    .btn-ai-sparkle {
+      color: #79f5c4;
+      font-size: 13px;
+      animation: sparklePulse 2.5s infinite ease-in-out;
+    }
+    @keyframes sparklePulse {
+      0%, 100% { transform: scale(1); opacity: 0.9; }
+      50% { transform: scale(1.25); opacity: 1; filter: drop-shadow(0 0 4px #79f5c4); }
+    }
+
+    /* AI Modal Dialog */
+    .ai-dialog {
+      width: min(92vw, 620px);
+      border: 1px solid #cbd4ca;
+      border-radius: 14px;
+      padding: 0;
+      overflow: hidden;
+      background: #fbfbf8;
+      box-shadow: 0 16px 50px rgba(27, 43, 36, 0.28);
+    }
+    .ai-dialog::backdrop {
+      background: rgba(22, 35, 29, 0.45);
+      backdrop-filter: blur(4px);
+    }
+    .ai-modal-header {
+      background: #234138;
+      color: #f3f9f5;
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ai-modal-header h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      letter-spacing: 0.3px;
+    }
+    .ai-close-btn {
+      color: #c9ddd4;
+      font-size: 18px;
+      line-height: 1;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    .ai-close-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    .ai-tabs {
+      display: flex;
+      background: #eef2ec;
+      border-bottom: 1px solid #d4ded3;
+      padding: 0 8px;
+      gap: 4px;
+      overflow-x: auto;
+    }
+    .ai-tab {
+      padding: 9px 12px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #55635a;
+      border-bottom: 2px solid transparent;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .ai-tab:hover { color: #1c362d; }
+    .ai-tab.active {
+      color: #1a4235;
+      border-bottom-color: #27624f;
+      background: #fbfbf8;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .ai-tab-content {
+      padding: 16px 18px;
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .ai-tab-content.active { display: flex; }
+
+    .ai-prompt-area {
+      width: 100%;
+      min-height: 70px;
+      padding: 9px 11px;
+      border: 1px solid #ced6cc;
+      border-radius: 7px;
+      background: #fff;
+      font-size: 12.5px;
+      color: #222b26;
+      resize: vertical;
+      box-sizing: border-box;
+      outline: none;
+      line-height: 1.4;
+    }
+    .ai-prompt-area:focus {
+      border-color: #31584d;
+      box-shadow: 0 0 0 2px rgba(49,88,77,0.14);
+    }
+    .ai-actions-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .btn-ai-primary {
+      background: #275446;
+      color: #fff;
+      padding: 7px 15px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(39, 84, 70, 0.2);
+    }
+    .btn-ai-primary:hover { background: #1e4438; }
+    .btn-ai-secondary {
+      background: #e8ede6;
+      color: #304e43;
+      border: 1px solid #ccd5c9;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+    .btn-ai-secondary:hover { background: #dce4d9; }
+
+    .ai-result-box {
+      background: #f4f6f2;
+      border: 1px solid #d4ded3;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #26332c;
+      max-height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .ai-result-box:empty { display: none; }
+
+    .ai-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: aiSpin 0.7s linear infinite;
+    }
+    @keyframes aiSpin { to { transform: rotate(360deg); } }
+
+    .ai-image-preview-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 10px;
+      background: #f0f3ee;
+      border: 1px dashed #cad4c7;
+      border-radius: 8px;
+    }
+    .ai-image-preview-wrap img {
+      max-height: 160px;
+      max-width: 100%;
+      border-radius: 6px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+      background: #fff;
+    }
+
+    svg {
+      width: 17px;
+      height: 17px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.7;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      flex-shrink: 0;
+    }
+
+    .workspace {
+      height: calc(100dvh - 56px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 6px 12px 6px;
+      gap: 6px;
+      position: relative;
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      padding: 5px 8px;
+      gap: 5px;
+      background: #fafaf7;
+      border: 1px solid #dfdfd6;
+      border-radius: 9px;
+      box-shadow: 0 3px 12px rgba(48,55,50,0.05);
+      max-width: 100%;
+      flex-wrap: wrap;
+      justify-content: center;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+
+    .group { display: flex; gap: 3px; align-items: center; }
+    .sep { height: 22px; width: 1px; background: #dedfd7; margin: 0 2px; }
+
+    .tool {
+      height: 30px;
+      min-width: 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      padding: 0 6px;
+      font-size: 11px;
+      color: #555c54;
+      transition: background 0.12s, color 0.12s;
+    }
+    .tool:hover { background: #eeeee7; color: #222; }
+    .tool[aria-pressed="true"] {
+      background: #e1ebe3;
+      color: #23473b;
+      font-weight: 600;
+    }
+
+    .swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      padding: 3px;
+      border: 1px solid transparent;
+      margin: 0 1px;
+      display: inline-grid;
+      place-items: center;
+    }
+    .swatch span {
+      display: block;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--ink);
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+    }
+    .swatch[aria-pressed="true"] {
+      border-color: #8c9588;
+      background: #fff;
+      transform: scale(1.1);
+    }
+
+    .color-custom-wrap {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      padding: 0 3px;
+      font-size: 10.5px;
+      color: #6a7168;
+    }
+    .color-custom-wrap input[type="color"] {
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      border: 1px solid #c9cec6;
+      border-radius: 50%;
+      background: transparent;
+      cursor: pointer;
+    }
+    .color-custom-wrap input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    .color-custom-wrap input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 50%; }
+
+    .paper-swatch {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--paper);
+      border: 2px solid #cfd3cb;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.4);
+    }
+    .paper-swatch[aria-pressed="true"] {
+      outline: 2.5px solid #57786b;
+      outline-offset: 1px;
+    }
+
+    .margin-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10.5px;
+      color: #9c362d;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 2px 5px;
+      border: 1px solid #e8c4c1;
+      background: #fff8f7;
+      border-radius: 5px;
+    }
+    .margin-toggle input { accent-color: #c4382c; cursor: pointer; }
+
+    .size, .opacity { accent-color: #365749; cursor: pointer; }
+    .size { width: 60px; }
+    .opacity { width: 48px; }
+    .size-value { font-size: 10px; color: #72776e; min-width: 26px; }
+
+    .snap-palette { display: flex; gap: 2px; align-items: center; }
+    .snap-btn {
+      height: 23px;
+      min-width: 28px;
+      padding: 0 4px;
+      border: 1px solid #d8ddd3;
+      border-radius: 4px;
+      font: 600 9px ui-monospace, monospace;
+      color: #6f756c;
+    }
+    .snap-btn[aria-pressed="true"] {
+      background: #31584d;
+      color: #fff;
+      border-color: #31584d;
+    }
+
+    .radius-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      color: #556259;
+      background: #f2f5f0;
+      border: 1px solid #d4ded3;
+      border-radius: 5px;
+      padding: 2px 5px;
+    }
+    .radius-wrap input {
+      width: 38px;
+      padding: 1px 3px;
+      border: 1px solid #c8d3c6;
+      border-radius: 3px;
+      font-size: 10px;
+      text-align: center;
+      background: #fff;
+    }
+
+    .paper-wrap {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .page-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      letter-spacing: 1.1px;
+      color: #898c80;
+      margin: 0 4px 4px;
+    }
+    .paper {
+      position: relative;
+      flex: 1;
+      min-height: 0;
+      background: #dcd8d0;
+      box-shadow: inset 0 0 16px rgba(0,0,0,0.08);
+      overflow: hidden;
+      border-radius: 4px;
+    }
+    canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      display: block;
+    }
+
+    /* Floating Viewport / Zoom Controls */
+    .zoom-overlay {
+      position: absolute;
+      left: 14px;
+      bottom: 14px;
+      z-index: 25;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: rgba(255, 253, 248, 0.94);
+      backdrop-filter: blur(5px);
+      border: 1px solid #d0d6cc;
+      border-radius: 8px;
+      padding: 3px 6px;
+      box-shadow: 0 4px 14px rgba(35, 53, 44, 0.12);
+    }
+    .zoom-btn {
+      width: 25px;
+      height: 25px;
+      border-radius: 4px;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: #3a463f;
+      background: #f5f6f2;
+      border: 1px solid #d8ddd5;
+    }
+    .zoom-btn:hover { background: #e6eae3; }
+    .zoom-value {
+      font-size: 11px;
+      font-weight: 600;
+      color: #2f3b33;
+      padding: 0 4px;
+      min-width: 44px;
+      text-align: center;
+      cursor: pointer;
+    }
+    .zoom-value:hover { text-decoration: underline; }
+
+    /* Indicador permanente de Capa Activa */
+    .active-layer-indicator {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #24443a;
+      color: #f6fcf8;
+      border-radius: 5px;
+      padding: 2px 7px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.12);
+    }
+    .active-layer-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #39e68c;
+      box-shadow: 0 0 7px #39e68c;
+    }
+
+    /* Floating Draggable Layers Panel */
+    .layers-panel {
+      position: absolute;
+      right: 16px;
+      top: 16px;
+      width: 250px;
+      max-height: calc(100% - 32px);
+      z-index: 35;
+      background: rgba(255, 253, 249, 0.96);
+      border: 1px solid #cfd5ca;
+      border-radius: 9px;
+      box-shadow: 0 8px 28px rgba(30, 48, 40, 0.20);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    .layers-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      background: #eaece5;
+      border-bottom: 1px solid #d9ded4;
+      border-radius: 8px 8px 0 0;
+      cursor: grab;
+    }
+    .layers-head:active { cursor: grabbing; }
+    .layers-head-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #2c3831;
+    }
+    .layers-head-actions { display: flex; align-items: center; gap: 4px; }
+    .layers-head-btn {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      color: #49544c;
+      background: #fbfcf9;
+      border: 1px solid #d4dad0;
+    }
+    .layers-head-btn:hover { background: #e3e8e0; }
+    .layers-body {
+      padding: 8px 9px;
+      overflow-y: auto;
+      max-height: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .layers-body.collapsed { display: none; }
+    .layers-toolbar-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .import-btn {
+      background: #e3ebe5;
+      color: #254d42;
+      border-radius: 5px;
+      padding: 4px 7px;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #c8d3ca;
+    }
+    .import-btn:hover { background: #d3e1d6; }
+
+    .layer-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid transparent;
+      border-radius: 5px;
+      padding: 5px 4px;
+      font-size: 11px;
+      transition: background 0.12s;
+    }
+    .layer-row.active-ink {
+      background: #e1efe5;
+      border-color: #8bbfa3;
+      box-shadow: inset 0 0 0 1px #8bbfa3;
+    }
+    .layer-row.active-ink .layer-name {
+      font-weight: 700;
+      color: #173b2f;
+    }
+    .badge-active-layer {
+      font-size: 8.5px;
+      background: #256b4f;
+      color: #ffffff;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: 700;
+      letter-spacing: 0.4px;
+      margin-left: 2px;
+    }
+    .layer-eye { width: 19px; height: 19px; font-size: 13px; color: #55635a; }
+    .layer-name { flex: 1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
+    .layer-order-btn {
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      padding: 0;
+      border-radius: 3px;
+      background: #ecefe9;
+      color: #4b584f;
+      display: grid;
+      place-items: center;
+    }
+    .layer-order-btn:hover:not(:disabled) { background: #d9e0d6; }
+    .layer-remove { color: #a15c53; font-size: 15px; padding: 0 3px; }
+    .layer-opacity {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 2px 4px 4px;
+      font-size: 10px;
+      color: #788077;
+    }
+    .layer-opacity input { flex: 1; accent-color: #3b6657; }
+
+    /* Popover del editor de texto */
+    .text-popover {
+      position: absolute;
+      z-index: 40;
+      background: #fffdf9;
+      border: 1px solid #c9d0c6;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(35,53,44,0.22);
+      padding: 9px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      min-width: 320px;
+      max-width: 90vw;
+    }
+    .text-popover[hidden] { display: none; }
+    .text-popover-row {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      flex-wrap: wrap;
+    }
+    .text-popover select {
+      background: #f4f5f1;
+      border: 1px solid #cfd5cc;
+      border-radius: 5px;
+      padding: 3px 5px;
+      font-size: 11px;
+      color: #2b3a32;
+      flex: 1;
+      cursor: pointer;
+    }
+    .text-btn-toggle {
+      width: 25px;
+      height: 25px;
+      border-radius: 4px;
+      border: 1px solid #d0d7cd;
+      display: grid;
+      place-items: center;
+      font-size: 11.5px;
+      color: #49544c;
+      background: #fafbf9;
+      cursor: pointer;
+    }
+    .text-btn-toggle.active {
+      background: #31584d;
+      color: #fff;
+      border-color: #31584d;
+      font-weight: 700;
+    }
+    .text-size-input {
+      width: 44px;
+      padding: 2px 3px;
+      font-size: 11px;
+      border: 1px solid #cfd5cc;
+      border-radius: 5px;
+      text-align: center;
+      background: #fff;
+    }
+    .text-popover textarea {
+      width: 100%;
+      height: 60px;
+      padding: 6px 8px;
+      border: 1px solid #cbd2c7;
+      border-radius: 5px;
+      background: #fdfcf9;
+      font-size: 13px;
+      color: #242a26;
+      resize: vertical;
+      outline: none;
+      line-height: 1.35;
+    }
+    .text-popover textarea:focus {
+      border-color: #31584d;
+      box-shadow: 0 0 0 2px rgba(49,88,77,0.15);
+    }
+    .text-popover-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 6px;
+    }
+    .text-popover-actions button {
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .btn-text-cancel { background: #edece6; color: #586159; }
+    .btn-text-confirm { background: #31584d; color: #fff; }
+
+    /* Panel de selección contextual expandido */
+    .selection-panel {
+      position: absolute;
+      bottom: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255, 253, 249, 0.96);
+      backdrop-filter: blur(8px);
+      border: 1px solid #cfd6cc;
+      border-radius: 9px;
+      box-shadow: 0 6px 24px rgba(35,53,44,0.18);
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      z-index: 25;
+      font-size: 11px;
+      color: #3b443e;
+      flex-wrap: wrap;
+      max-width: 95vw;
+    }
+    .selection-panel[hidden] { display: none; }
+    .selection-panel button {
+      padding: 4px 8px;
+      border-radius: 4px;
+      border: 1px solid #d2d8ce;
+      background: #f7f8f5;
+      font-size: 11px;
+      color: #333d36;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+    .selection-panel button:hover { background: #e8ede5; }
+    .selection-panel .sep-mini { width: 1px; height: 18px; background: #d7dcd4; margin: 0 2px; }
+    .btn-del-obj { color: #9c3f35 !important; border-color: #e5c3be !important; }
+
+    /* Popover de Copiado Paramétrico */
+    .param-copy-popover {
+      position: absolute;
+      bottom: 58px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fffdf9;
+      border: 1px solid #c9d2c6;
+      border-radius: 9px;
+      box-shadow: 0 10px 30px rgba(30, 48, 40, 0.22);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 290px;
+      z-index: 30;
+      font-size: 11.5px;
+    }
+    .param-copy-popover[hidden] { display: none; }
+    .param-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .param-row label { font-size: 10.5px; color: #58635b; font-weight: 600; }
+    .param-input {
+      padding: 3px 6px;
+      border: 1px solid #c8cfc5;
+      border-radius: 4px;
+      font-size: 11.5px;
+      background: #fafaf7;
+      color: #212925;
+      outline: none;
+    }
+    .param-input:focus { border-color: #30534a; }
+    .param-help { font-size: 9.5px; color: #738076; line-height: 1.25; margin-top: -2px; }
+
+    /* Regla milimetrada */
+    .ruler {
+      position: absolute;
+      width: 300px;
+      height: 54px;
+      transform-origin: center;
+      z-index: 15;
+      pointer-events: none;
+      border: 1px solid rgba(69,108,108,0.45);
+      background: rgba(164,206,213,0.24);
+      border-radius: 4px;
+      box-shadow: 0 3px 12px rgba(37,70,71,0.12);
+      color: #335c60;
+      touch-action: none;
+    }
+    .ruler[hidden] { display: none; }
+    .ruler-ticks {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(90deg, rgba(69,108,108,0.55) 0 1px, transparent 1px 10px) top / 100% 10px no-repeat,
+        repeating-linear-gradient(90deg, rgba(69,108,108,0.55) 0 1px, transparent 1px 10px) bottom / 100% 10px no-repeat;
+    }
+    .ruler button {
+      pointer-events: auto;
+      position: absolute;
+      top: 10px;
+      height: 32px;
+      border-radius: 5px;
+      background: rgba(255,253,248,0.85);
+      border: 1px solid rgba(69,108,108,0.3);
+      font-size: 11px;
+      touch-action: none;
+      user-select: none;
+    }
+    .ruler-move { left: 50%; transform: translateX(-50%); padding: 0 11px; cursor: move; }
+    .ruler-rotate { right: 8px; width: 32px; cursor: grab; }
+    .ruler-zero { left: 8px; width: 36px; }
+
+    /* Estilos y adaptación para Modo Celular */
+    body.mobile-mode {
+      --touch-size: 42px;
+    }
+    body.mobile-mode header {
+      height: 50px;
+      padding: 0 10px;
+    }
+    body.mobile-mode .brand h1 {
+      font-size: 16px;
+    }
+    body.mobile-mode .brand small {
+      display: none;
+    }
+    body.mobile-mode .sheet-select-wrap span {
+      display: none;
+    }
+    body.mobile-mode .toolbar {
+      padding: 6px;
+      gap: 4px;
+      max-height: 86px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      flex-wrap: nowrap;
+      justify-content: flex-start;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 12px;
+      scrollbar-width: none;
+    }
+    body.mobile-mode .toolbar::-webkit-scrollbar {
+      display: none;
+    }
+    body.mobile-mode .tool {
+      height: 36px;
+      min-width: 36px;
+      padding: 0 8px;
+      font-size: 12px;
+    }
+    body.mobile-mode .swatch {
+      width: 26px;
+      height: 26px;
+    }
+    body.mobile-mode .paper-swatch {
+      width: 25px;
+      height: 25px;
+    }
+    body.mobile-mode .size {
+      width: 50px;
+    }
+    body.mobile-mode .opacity {
+      width: 42px;
+    }
+    body.mobile-mode .zoom-overlay {
+      bottom: 24px;
+      left: 10px;
+      padding: 2px 4px;
+    }
+    body.mobile-mode .keyboard {
+      display: none;
+    }
+    body.mobile-mode .layers-panel {
+      width: min(85vw, 240px);
+      right: 8px;
+      top: 8px;
+    }
+
+    /* Calibración táctil */
+    .calibration-target {
+      position: absolute;
+      z-index: 50;
+      width: 32px;
+      height: 32px;
+      border: 2px solid #cc5147;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      background: rgba(255,255,255,0.7);
+      box-shadow: 0 0 0 6px rgba(204,81,71,0.22);
+    }
+    .calibration-target::before, .calibration-target::after { content: ""; position: absolute; background: #cc5147; }
+    .calibration-target::before { width: 2px; height: 22px; left: 13px; top: 3px; }
+    .calibration-target::after { height: 2px; width: 22px; left: 3px; top: 13px; }
+    .calibration-help {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fffdf8;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      color: #6f756c;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .calibration-help button { color: #31584d; text-decoration: underline; }
+    .calibration-help[hidden], .calibration-target[hidden] { display: none; }
+
+    footer {
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      color: #8b9084;
+      font-size: 10px;
+      min-height: 16px;
+      gap: 8px;
+    }
+    .hint { display: flex; align-items: center; gap: 7px; }
+    kbd {
+      font: 9.5px inherit;
+      border: 1px solid #d0d4c8;
+      border-radius: 3px;
+      padding: 1px 4px;
+      background: #f7f8f4;
+    }
+    .toast {
+      position: fixed;
+      bottom: 38px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #2b463d;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 7px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      z-index: 100;
+      font-size: 12px;
+    }
+    .toast.show { opacity: 1; }
+
+    dialog {
+      border: 1px solid #dedfd7;
+      border-radius: 12px;
+      padding: 20px;
+      color: #303732;
+      background: #fffdf8;
+      max-width: calc(100% - 32px);
+      box-shadow: 0 15px 70px rgba(0,0,0,0.18);
+    }
+    dialog::backdrop { background: rgba(35,53,44,0.35); }
+    dialog h2 { font: 20px Georgia, serif; margin: 0 0 8px; }
+    dialog p { color: #697268; margin: 0 0 16px; }
+    dialog .actions { display: flex; justify-content: flex-end; gap: 10px; }
+    .danger { background: #8c443d; color: white; border-radius: 6px; padding: 8px 14px; }
+    .cat-nav {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      background: #edf0ea;
+      padding: 3px 5px;
+      border-radius: 7px;
+      border: 1px solid #d4ded3;
+    }
+    .cat-btn {
+      padding: 4px 8px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #526156;
+      transition: all 0.15s;
+    }
+    .cat-btn:hover { background: #dfe6dc; color: #1e362c; }
+    .cat-btn.active {
+      background: #275446;
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(39, 84, 70, 0.22);
+    }
+    .panel-section {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+    .panel-section[hidden] {
+      display: none !important;
+    }
+    .dim-input-wrap {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10.5px;
+      background: #f1f4ed;
+      border: 1px solid #ced7cb;
+      border-radius: 5px;
+      padding: 2px 5px;
+    }
+    .dim-input-wrap input {
+      width: 48px;
+      padding: 1px 3px;
+      border: 1px solid #c0ccc0;
+      border-radius: 3px;
+      font-size: 10.5px;
+      text-align: center;
+      background: #fff;
+    }
+  </style>
+<style>
+/* Pantallas táctiles, orientación y áreas seguras de iOS. */
+html { height:100%; overscroll-behavior:none; -webkit-text-size-adjust:100%; }
+body { height:100vh; height:100dvh; overscroll-behavior:none; }
+canvas { -webkit-touch-callout:none; }
+input,textarea { user-select:text; -webkit-user-select:text; }
+header { padding-left:max(12px,env(safe-area-inset-left)); padding-right:max(12px,env(safe-area-inset-right)); }
+.workspace { padding-bottom:max(6px,env(safe-area-inset-bottom)); }
+#exportResolution { border:1px solid #ced5cc; border-radius:6px; background:#fffdf8; padding:6px; }
+@media (max-width:1024px), (pointer:coarse) {
+  header { height:64px; gap:8px; }
+  .brand { flex-shrink:0; } .brand small { display:none; }
+  .header-actions { min-width:0; overflow-x:auto; touch-action:pan-x; flex-wrap:nowrap; }
+  .header-actions > * { flex-shrink:0; }
+  .workspace { height:calc(100dvh - 64px); padding-left:6px; padding-right:6px; }
+  body.mobile-mode .toolbar, .toolbar { width:100%; max-height:30dvh; overflow:auto; flex-wrap:wrap; justify-content:flex-start; touch-action:pan-x pan-y; }
+  .cat-nav { width:100%; flex-shrink:0; }
+  .panel-section { flex-wrap:wrap; max-width:100%; }
+  body.mobile-mode .tool, .tool, .cat-btn, .btn-action, .btn-export { min-height:44px; min-width:44px; }
+  body.mobile-mode .swatch,.swatch,body.mobile-mode .paper-swatch,.paper-swatch { width:34px; height:34px; }
+  .layers-panel { max-height:55dvh; overflow-y:auto; max-width:calc(100% - 16px); }
+  .selection-panel { max-width:calc(100% - 16px); flex-wrap:wrap; max-height:30dvh; overflow:auto; }
+  .keyboard { display:none; } footer { flex-wrap:wrap; font-size:10px; }
+  input,select,textarea { font-size:16px; }
+  dialog { max-width:calc(100vw - 20px); max-height:85dvh; overflow:auto; }
+}
+@media(max-width:480px) { .brand .mark { display:none; } .brand h1 { font-size:16px; } .page-meta { font-size:8px; letter-spacing:.4px; } }
+</style>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<meta name="apple-mobile-web-app-title" content="Cuaderno">
+<style>
+.v11-controls{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:8px 12px;background:#f5f4ed;border-top:1px solid #ddd}
+#v11Toggle{display:none}
+.shortcut-key{font-size:9px;line-height:1;padding:2px 3px;border:1px solid #ccd4c8;border-radius:3px;color:#62765e;margin-left:4px;font-family:monospace}.persistent-action{position:relative}.persistent-action .shortcut-key{position:absolute;right:-3px;bottom:-4px;background:#fffdf8}
+#shortcutHelp{border:1px solid #ccd4c8;border-radius:14px;background:#fffdf8;max-width:550px;width:calc(100vw - 28px);max-height:85dvh;padding:22px;color:#29382f}#shortcutHelp::backdrop{background:#0005}
+#shortcutHelp h2{margin-top:0}#shortcutList{display:grid;grid-template-columns:1fr 1fr;gap:7px 18px}#shortcutList div{display:flex;gap:10px;align-items:center;font-size:13px}#shortcutList kbd{min-width:24px;text-align:center}
+#exitCleanView{display:none;position:fixed;right:max(12px,env(safe-area-inset-right));top:max(12px,env(safe-area-inset-top));z-index:120;border:1px solid #c8d1c4;border-radius:8px;padding:9px 12px;background:#fffdf8e8;color:#29382f;opacity:.4}#exitCleanView:hover,#exitCleanView:focus-visible{opacity:1}
+body.clean-view>header,body.clean-view .workspace>.toolbar,body.clean-view #v11Controls,body.clean-view #v11Toggle,body.clean-view footer,body.clean-view .page-meta,body.clean-view .layers-panel,body.clean-view #observationsPanel{display:none!important}
+body.clean-view .workspace{height:100dvh!important;padding:0!important;gap:0}body.clean-view .paper-wrap{width:100%;height:100dvh;flex:1}body.clean-view .paper{border-radius:0;box-shadow:none}body.clean-view #exitCleanView{display:none}
+@media(max-width:480px){#shortcutList{grid-template-columns:1fr}}
+.persistent-action svg{width:18px;height:18px}.persistent-action[aria-pressed="true"]{background:#dcece1;border-color:#2b6b55}.persistent-action:disabled{opacity:.35;cursor:default}.viewport-divider{height:22px;border-left:1px solid #ccd0c5;margin:0 3px}
+@media(pointer:coarse){.zoom-overlay .zoom-btn{width:36px;height:36px}}
+.profile-controls{flex-wrap:wrap}.profile-controls select,.profile-controls button{min-height:36px;border:1px solid #ccd0c5;border-radius:8px;background:#fffdf8;padding:6px 10px;color:#29382f}.profile-controls button[aria-pressed="true"]{background:#dcece1;border-color:#2b6b55}.profile-controls label{display:flex;align-items:center;gap:6px;font-size:12px}.profile-controls label[hidden]{display:none}
+.ink-settings{border-left:1px solid #ddd;padding-left:8px}
+@media(max-width:640px){#v11Toggle{display:block;margin:6px 12px;padding:10px;border:1px solid #ccd0c5;border-radius:8px;background:#fffdf8;color:#29382f}.v11-controls{display:none}.v11-expanded .v11-controls{display:flex}}
+.v11-controls button,.v11-controls select{min-height:40px;border:1px solid #ccd0c5;border-radius:8px;background:#fffdf8;padding:6px 10px;color:#29382f}
+.v11-controls button[aria-pressed="true"]{background:#dcece1;border-color:#2b6b55}
+.v11-controls label[hidden]{display:none}.v11-controls label{display:flex;gap:6px;align-items:center;font-size:12px}.v11-controls input[type="range"]{width:100px}
+#laserDot{position:fixed;width:16px;height:16px;border-radius:50%;background:#ff303c;border:2px solid white;box-shadow:0 0 9px 4px #ff243b99;transform:translate(-50%,-50%);pointer-events:none;z-index:190}
+#laserDot[hidden],#observationsPanel[hidden]{display:none}
+#observationsPanel{position:fixed;right:16px;bottom:55px;width:min(350px,calc(100vw - 32px));max-height:60vh;background:#fffdf8;border:1px solid #d3d5c9;border-radius:14px;box-shadow:0 8px 30px #0002;padding:14px;z-index:110}
+#observationsPanel header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+#observationsPanel textarea{width:100%;height:220px;max-height:40vh;resize:vertical;box-sizing:border-box;border:1px solid #d3d5c9;border-radius:8px;padding:12px;font:15px/1.6 sans-serif;touch-action:auto}
+#observationsPanel p{font-size:12px;color:#687466;margin:8px 0 0}
+
+.paper-wrap:fullscreen,.paper-wrap.canvas-fullscreen{width:100vw!important;height:100dvh!important;max-width:none!important;padding:8px 8px 70px!important;background:#eeece7;box-sizing:border-box}
+.paper-wrap.canvas-fullscreen{position:fixed!important;inset:0;z-index:999}
+.paper-wrap:fullscreen .paper,.paper-wrap.canvas-fullscreen .paper{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
+body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1000;padding:6px;gap:6px;max-width:calc(100vw - 16px);box-sizing:border-box}
+.canvas-actions .dock-action{width:auto;padding:6px 10px;white-space:nowrap;height:32px;background:#e8ece5;font-size:12px}
+@media(max-width:480px){.paper-wrap:fullscreen,.paper-wrap.canvas-fullscreen{padding-bottom:100px!important}body .zoom-overlay.canvas-actions{gap:3px;padding:4px;flex-wrap:wrap;justify-content:center;width:max-content}.canvas-actions .zoom-btn{flex-shrink:0}.canvas-actions .dock-action{font-size:11px;padding:6px}.canvas-actions .viewport-divider{display:none}}
+</style></head>
+<body>
+
+<svg style="display:none" aria-hidden="true">
+  <defs>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="m15 4 5 5M4 20l5-1L20 8a2 2 0 0 0-5-5L4 15zM4 15l5 4"/></symbol>
+    <symbol id="i-erase" viewBox="0 0 24 24"><path d="m14 3 7 7-10 11H6l-5-5zM8 9l8 8M11 21h11"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/></symbol>
+    <symbol id="i-lines" viewBox="0 0 24 24"><path d="M4 5h16M4 10h16M4 15h16M4 20h16"/></symbol>
+    <symbol id="i-blank" viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24"><path d="m8 4-5 5 5 5M3 9h11a6 6 0 0 1 0 12"/></symbol>
+    <symbol id="i-redo" viewBox="0 0 24 24"><path d="m16 4 5 5-5 5M21 9H10a6 6 0 0 0 0 12"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M10 10v7M14 10v7"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v4M14 10V4a2 2 0 0 0-4 0v7M10 10.5V2a2 2 0 0 0-4 0v11M6 13v-1a2 2 0 0 0-4 0v6a8 8 0 0 0 8 8h3a8 8 0 0 0 8-8v-6a2 2 0 0 0-4 0v3"/></symbol>
+  </defs>
+</svg>
+
+<!-- Header con Selector de Formato de Papel -->
+<header>
+  <div class="brand">
+    <div class="mark"><svg><use href="#i-blank"/></svg></div>
+    <div>
+      <h1>Cuaderno</h1>
+      <small>TU ESPACIO EN PAPEL</small>
+    </div>
+  </div>
+
+  <div class="header-actions">
+    <!-- Selector de Tamaño de Hoja -->
+    <div class="sheet-select-wrap" title="Formato estandarizado de la hoja">
+      <span>📐 Lienzo:</span>
+      <select id="sheetFormatSelect">
+        <option value="a4_v">A4 Vertical (210 × 297 mm)</option>
+        <option value="a4_h">A4 Horizontal (297 × 210 mm)</option>
+        <option value="letter">Carta / Letter (8.5 × 11 in)</option>
+        <option value="legal">Oficio / Legal (8.5 × 14 in)</option>
+        <option value="a3_v">A3 Vertical (297 × 420 mm)</option>
+        <option value="a3_h">A3 Horizontal (420 × 297 mm)</option>
+        <option value="square">Cuadrado 1:1 (1200 × 1200 px)</option>
+        <option value="free">Libre / Pantalla (1280 × 820 px)</option>
+      </select>
+    </div>
+
+    <button class="btn-action" id="toggleMobileModeBtn" title="Activar/desactivar Modo Celular con gestos de zoom táctil">
+      <span>📱</span> Móvil
+    </button>
+    <button class="btn-action" id="fullscreenBtn" title="Pantalla completa limpia (F3)" aria-pressed="false">⛶ Pantalla completa · F3</button>
+    <button class="btn-action" id="shortcutHelpBtn" title="Ver todos los atajos (?)">Atajos · ?</button>
+    <button class="btn-action" id="saveSession">Guardar sesión</button>
+    <button class="btn-action" id="openSession">Abrir sesión</button>
+    <button class="btn-action" id="recoverSession">Recuperar copia</button>
+    <button class="btn-action" id="installApp">Instalar / App</button>
+    <input id="sessionFile" type="file" accept=".json,.cuaderno,application/json" hidden>
+    <button class="btn-action" id="toggleLayersBtn" title="Mostrar/ocultar capas">▤ Capas</button>
+    <select id="exportResolution" aria-label="Resolución del PNG" title="Calidad de exportación">
+      <option value="2">PNG 2×</option><option value="3" selected>PNG 3×</option><option value="4">PNG 4×</option>
+    </select>
+    <button class="btn-export" id="export"><svg><use href="#i-save"/></svg> Guardar PNG</button>
+  </div>
+</header>
+
+<div id="sessionLoading" hidden style="position:fixed;inset:0;z-index:200;background:#fffdf8ed;place-items:center;font-size:18px"><span>Recuperando sesión…</span></div><style>#sessionLoading:not([hidden]){display:grid}</style>
+<dialog id="installHelp"><h2>Cuaderno como aplicación</h2>
+<p>Windows o Mac: abre el sitio en Chrome o Edge y usa «Instalar aplicación» en el menú del navegador.</p>
+<p>iPad o iPhone: abre el sitio en Safari, toca Compartir y «Añadir a pantalla de inicio».</p>
+<p>Android: abre el sitio en Chrome y usa «Instalar aplicación» o «Añadir a pantalla de inicio».</p>
+<p>Las sesiones quedan en este navegador. Usa Guardar sesión y Abrir sesión para llevarlas a otro dispositivo.</p>
+<button id="closeInstallHelp" class="btn-action">Cerrar</button></dialog>
+<main class="workspace">
+  <div class="toolbar" role="toolbar" aria-label="Herramientas de dibujo">
+    <!-- Navegación por Categorías -->
+    <div class="cat-nav" role="tablist" aria-label="Categorías de herramientas">
+      <button type="button" class="cat-btn active" data-target="panelBrush">✎ Lápices y pinceles</button>
+      <button type="button" class="cat-btn" data-target="panelDraw">▱ Figuras y texto</button>
+      <button type="button" class="cat-btn" data-target="panelEdit">✂️ Edición</button>
+      <button type="button" class="cat-btn" data-target="panelSheet">📄 Hoja</button>
+      <button type="button" class="cat-btn" data-target="panelAll">👁️ Todo</button>
+    </div>
+
+    <div class="sep"></div>
+
+    <div id="panelBrush" class="panel-section" aria-label="Lápices y pinceles">
+      <!-- Pinceles y Relleno -->
+      <div class="group">
+        <button class="tool" id="pen" aria-pressed="true" title="Bolígrafo (B)"><svg><use href="#i-pen"/></svg></button>
+        <button class="tool" id="graphite" aria-pressed="false" title="Lápiz de grafito (G)">✎ Grafito</button>
+        <button class="tool" id="marker" aria-pressed="false" title="Marcador">▰ Marcador</button>
+        <button class="tool" id="highlighter" aria-pressed="false" title="Resaltador (H)">▱ Resaltar</button>
+        <button class="tool" id="watercolor" aria-pressed="false" title="Acuarela">≈ Acuarela</button>
+        <button class="tool" id="blend" aria-pressed="false" title="Mezclador (M)">◌ Mezclar</button>
+        <button class="tool" id="vectorPen" aria-pressed="false" title="Pluma vectorial (V)">⌁ Vector</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="group" title="Grosor sensible a la fuerza del stylus">
+        <label><input id="pressureEnabled" type="checkbox" checked> Presión</label>
+        <input id="pressureSensitivity" class="size" type="range" min="0.5" max="2" step="0.1" value="1" aria-label="Sensibilidad a la presión">
+        <output id="pressureValue" class="size-value">1×</output>
+        <meter id="pressureMeter" min="0" max="1" value="0" aria-label="Presión recibida" style="width:70px"></meter>
+        <output id="pressureReadout" style="font-size:11px;max-width:260px">Presión: esperando lápiz</output>
+      </div>
+    </div>
+    <div id="panelDraw" class="panel-section" hidden aria-label="Figuras y texto">
+      <!-- Formas y Texto -->
+      <div class="group">
+        <button class="tool" id="bucket" aria-pressed="false" title="Tarro de pintura / Relleno (F)">🪣 Relleno</button>
+      </div>
+      <div class="group">
+        <button class="tool" id="textTool" aria-pressed="false" title="Insertar texto tipográfico (T)"><b>T</b> Texto</button>
+        <button class="tool" id="lineTool" aria-pressed="false" title="Línea recta (L)">↗ Línea</button>
+        <button class="tool" id="curveTool" aria-pressed="false" title="Curva interactiva (U)">∿ Curva</button>
+        <button class="tool" id="rectTool" aria-pressed="false" title="Rectángulo (R)">▭ Rect</button>
+        <label class="radius-wrap" title="Radio de esquinas de rectángulo (0 = esquinas vivas)">
+          <span>╭╮</span>
+          <input type="number" id="rectCornerRadius" min="0" max="100" value="0" step="2">
+          <span>px</span>
+        </label>
+        <button class="tool" id="circleTool" aria-pressed="false" title="Círculo perfecto (C)">○ Círculo</button>
+        <button class="tool" id="ellipseTool" aria-pressed="false" title="Elipse (O)">⬭ Elipse</button>
+        <button class="tool" id="arrowTool" aria-pressed="false" title="Flecha conector (A)">➔ Flecha</button>
+        <button class="tool" id="cloudTool" aria-pressed="false" title="Nube de revisión (W)">☁ Nube</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="group profile-controls" aria-label="Figuras predeterminadas">
+    <select id="profilePreset" aria-label="Figura predeterminada">
+      <option value="parallel-horizontal">Paralelas horizontales ☰</option><option value="parallel-vertical">Paralelas verticales Ⅲ</option>
+      <option value="beam-normal" selected>Viga normal ┌</option><option value="beam-semi">Viga semi-invertida ├</option><option value="beam-inverted">Viga invertida └</option>
+      <option value="steel-i">Acero · I</option><option value="steel-lipped">Acero · C con labios</option><option value="steel-box">Acero · Tubo rectangular □</option><option value="steel-c">Acero · Canal C</option>
+    </select>
+    <label id="parallelOptions" hidden>Líneas <input id="parallelCount" type="number" min="2" max="20" step="1" value="2" aria-label="Cantidad de líneas paralelas" style="width:56px"></label>
+    <button id="profileTool" aria-pressed="false">Insertar figura</button>
+    <label><input id="profileHatch" type="checkbox" checked> Hachurado de vigas</label>
+      </div>
+    </div>
+    <div class="panel-section ink-settings" aria-label="Color y trazo para lápices y figuras">
+      <!-- Paleta de Tinta Expandida -->
+      <div class="group" aria-label="Color de tinta">
+        <button class="swatch" data-color="#292e35" style="--ink:#292e35" aria-label="Negro" aria-pressed="true"><span></span></button>
+        <button class="swatch" data-color="#f4f2e9" style="--ink:#f4f2e9;background:#d7dbd3" aria-label="Blanco" aria-pressed="false"><span></span></button>
+        <button class="swatch" data-color="#315dad" style="--ink:#315dad" aria-label="Azul" aria-pressed="false"><span></span></button>
+        <button class="swatch" data-color="#bd4c43" style="--ink:#bd4c43" aria-label="Rojo" aria-pressed="false"><span></span></button>
+        <button class="swatch" data-color="#3e8a68" style="--ink:#3e8a68" aria-label="Verde" aria-pressed="false"><span></span></button>
+        <button class="swatch" data-color="#d88a35" style="--ink:#d88a35" aria-label="Naranja" aria-pressed="false"><span></span></button>
+        <button class="swatch" data-color="#8059a8" style="--ink:#8059a8" aria-label="Violeta" aria-pressed="false"><span></span></button>
+        <label class="color-custom-wrap" title="Elegir más colores de lápiz">
+          <input type="color" id="inkColorCustom" value="#292e35" aria-label="Selector de color personalizado">
+          <span>Más</span>
+        </label>
+        <button class="tool" id="picker" aria-pressed="false" title="Cuentagotas: Tomar color">⌕</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Grosor y Opacidad -->
+      <div class="group" title="Grosor de punta">
+        <input class="size" id="size" type="range" min="1" max="16" value="3" step="0.5" aria-label="Grosor">
+        <output id="sizeValue" class="size-value">3 px</output>
+      </div>
+      <div class="group" title="Opacidad del trazo">
+        <span style="font-size:11px;color:#788075">◐</span>
+        <input class="opacity" id="inkOpacity" type="range" min="0" max="100" value="100" step="5" aria-label="Opacidad">
+        <output id="opacityValue" class="size-value">100%</output>
+      </div>
+    </div>
+
+    <!-- PANEL 2: EDICIÓN (Mover, Copiar, Espejo, Snaps, Regla, Historial) -->
+    <div id="panelEdit" class="panel-section" hidden>
+      <div class="group">
+        <button class="tool" id="eraser" aria-pressed="false" title="Borrador (E)"><svg><use href="#i-erase"/></svg></button>
+      </div>
+      <div class="group">
+        <button class="tool" id="toolSelect" aria-pressed="false" title="Mover y transformar elementos (S)">✥ Mover</button>
+        <button class="tool" id="toolCopyQuick" aria-pressed="false" title="Copiar elemento rápido (+25px)">📋 Copiar</button>
+        <button class="tool" id="toolMirrorQuick" aria-pressed="false" title="Reflejar elemento seleccionado (Espejo)">🪞 Espejo</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="snap-palette" role="group" aria-label="Referencias a objetos">
+        <span style="font-size:9px;color:#858b80">SNAP</span>
+        <button class="snap-btn" data-snap="int" aria-pressed="false" title="Intersección">INT</button>
+        <button class="snap-btn" data-snap="nea" aria-pressed="false" title="Punto cercano">NEA</button>
+        <button class="snap-btn" data-snap="end" aria-pressed="true" title="Extremo">END</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="group">
+        <button class="tool" id="rulerToggle" aria-pressed="false" title="Regla">Regla</button>
+        <button class="tool" id="autoStraight" aria-pressed="false" title="Auto recta">Auto recta</button>
+        <button class="tool" id="calibrate" aria-pressed="false" title="Calibrar lápiz">Calibrar</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="group">
+        <button class="tool" id="clear" title="Limpiar página" aria-label="Limpiar página" disabled><svg><use href="#i-trash"/></svg></button>
+      </div>
+    </div>
+
+    <!-- PANEL 3: HOJA (Guías, Márgenes, Colores y Dimensiones libres) -->
+    <div id="panelSheet" class="panel-section" hidden>
+      <div class="group" aria-label="Guía del papel">
+        <button class="tool" data-pattern="grid" aria-pressed="true" title="Cuadrícula"><svg><use href="#i-grid"/></svg></button>
+        <button class="tool" data-pattern="lines" aria-pressed="false" title="Papel rayado"><svg><use href="#i-lines"/></svg></button>
+        <button class="tool" data-pattern="plain" aria-pressed="false" title="Sin guías"><svg><use href="#i-blank"/></svg></button>
+      </div>
+
+      <label class="margin-toggle" title="Mostrar margen vertical rojo en cuadrícula o rayado">
+        <input type="checkbox" id="showRedMargin" checked>
+        <span>Margen rojo</span>
+      </label>
+
+      <div class="sep"></div>
+
+      <div class="group paper-colors" aria-label="Color de papel">
+        <button class="paper-swatch" data-bg="white" style="--paper:#fffdf8" aria-label="Papel blanco" aria-pressed="true"></button>
+        <button class="paper-swatch" data-bg="black" style="--paper:#111513" aria-label="Papel negro" aria-pressed="false"></button>
+        <button class="paper-swatch" data-bg="gray" style="--paper:#d8d9d5" aria-label="Papel gris" aria-pressed="false"></button>
+        <button class="paper-swatch" data-bg="brown" style="--paper:#e3c9a8" aria-label="Papel marrón claro" aria-pressed="false"></button>
+      </div>
+
+      <div class="sep"></div>
+
+      <!-- Dimensiones Personalizadas del Lienzo -->
+      <div class="dim-input-wrap" title="Dimensiones exactas del lienzo libre">
+        <span>📐</span>
+        <input type="number" id="customSheetW" value="1000" min="200" max="8000" step="50" placeholder="Ancho">
+        <span>×</span>
+        <input type="number" id="customSheetH" value="1414" min="200" max="8000" step="50" placeholder="Alto">
+        <span>px</span>
+        <button type="button" class="btn-action" id="btnApplyCustomSheet" style="padding:2px 7px;font-size:10.5px">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="calibration-help" id="calibrationHelp" hidden>
+    <span id="calibrationText">Toca el centro de la marca roja con la punta del lápiz.</span>
+    <button id="cancelCalibration">Cancelar</button>
+    <button id="resetCalibration" hidden>Restablecer</button>
+  </div>
+
+  <button id="v11Toggle" aria-expanded="false" aria-controls="v11Controls">Herramientas v1.1 · láser, goma y notas ▾</button>
+  <div id="v11Controls" class="v11-controls" aria-label="Herramientas versión 1.1">
+    <span style="font-size:12px">v1.1</span>
+    <button id="laserTool" aria-pressed="false" title="Puntero para presentaciones, no dibuja">● Láser</button>
+    <label><input id="objectEraser" type="checkbox"> Goma por objetos</label>
+    <label>Goma de área <input id="eraserDiameter" type="range" min="2" max="120" value="24"><output id="eraserDiameterValue">24 px</output></label>
+    <button id="observationsToggle" aria-expanded="false" aria-controls="observationsPanel">✎ Observaciones</button>
+
+  </div>
+  <div id="laserDot" hidden aria-hidden="true"></div>
+  <aside id="observationsPanel" hidden aria-label="Observaciones del cuaderno">
+    <header><strong>Notas / observaciones</strong><button id="observationsClose" aria-label="Cerrar observaciones">✕</button></header>
+    <textarea id="observationsText" placeholder="Anota pendientes, ideas o recordatorios…" aria-label="Notas y observaciones"></textarea>
+    <p>Se guardan con la sesión. No aparecen en la imagen PNG.</p>
+  </aside>
+  <!-- Contenedor del Papel -->
+  <section class="paper-wrap" aria-label="Página del cuaderno">
+    <div class="page-meta">
+      <span>MI CUADERNO <span style="margin:0 6px;color:#c1c4b8">/</span> PÁGINA 01</span>
+      <span id="paperName">CUADRICULADO · BLANCO (A4 VERTICAL)</span>
+    </div>
+    <div class="paper" id="paper">
+      <canvas id="background" aria-hidden="true"></canvas>
+      <canvas id="ink" aria-label="Lienzo de dibujo"></canvas>
+      <canvas id="preview" aria-hidden="true" style="pointer-events:none"></canvas>
+
+      <!-- Zoom & Pan Controls Overlay -->
+      <div class="zoom-overlay canvas-actions" aria-label="Mano, historial y zoom">
+        <button class="zoom-btn persistent-action" id="toolPan" aria-pressed="false" title="Mano / Desplazar lienzo (H o Espacio)" aria-label="Mano"><svg><use href="#i-hand"/></svg></button>
+        <button class="zoom-btn persistent-action" id="undo" title="Deshacer (Ctrl+Z)" aria-label="Deshacer" disabled><svg><use href="#i-undo"/></svg></button>
+        <button class="zoom-btn persistent-action" id="redo" title="Rehacer (Ctrl+Y)" aria-label="Rehacer" disabled><svg><use href="#i-redo"/></svg></button>
+        <span class="viewport-divider" aria-hidden="true"></span>
+        <button class="zoom-btn" id="zoomOutBtn" title="Alejar (-)">−</button>
+        <span class="zoom-value" id="zoomValueBtn" title="Restablecer escala al 100%">100%</span>
+        <button class="zoom-btn" id="zoomInBtn" title="Acercar (+)">+</button>
+        <button class="zoom-btn" id="zoomResetBtn" title="Ajustar y centrar papel en pantalla" style="font-size:10px">⛶</button>
+        <button class="zoom-btn dock-action" id="canvasFullscreen" title="Pantalla completa (F3 o Mayús+F)">⛶ Pantalla completa</button>
+        <button class="zoom-btn dock-action" id="canvasHelp">Atajos</button>
+      </div>
+
+      <!-- Editor de texto flotante -->
+      <div id="textPopover" class="text-popover" hidden>
+        <div class="text-popover-row">
+          <select id="textFontFamily" aria-label="Familia de fuente">
+            <option value="sans-serif">Sans-Serif (Moderna)</option>
+            <option value="'Roboto', sans-serif">Roboto</option>
+            <option value="Georgia, serif">Georgia (Elegante)</option>
+            <option value="'Playfair Display', serif">Playfair Display (Serif)</option>
+            <option value="'Caveat', cursive">Caveat (Manuscrita)</option>
+            <option value="'Architects Daughter', cursive">Architects Daughter (Boceto)</option>
+            <option value="'Fira Code', monospace">Fira Code (Código)</option>
+            <option value="Impact, fantasy">Impact (Titular)</option>
+          </select>
+          <input type="number" id="textFontSize" class="text-size-input" value="28" min="10" max="140" step="2" title="Tamaño en px">
+          <span style="font-size:10.5px;color:#6b736b">px</span>
+          <button type="button" id="textBoldBtn" class="text-btn-toggle" title="Negrita"><b>B</b></button>
+          <button type="button" id="textItalicBtn" class="text-btn-toggle" title="Cursiva"><i>I</i></button>
+          <button type="button" id="textUnderlineBtn" class="text-btn-toggle" title="Subrayado"><u>U</u></button>
+        </div>
+        <textarea id="textInput" placeholder="Escribe tu texto... Shift+Enter para nueva línea"></textarea>
+        <div class="text-popover-actions">
+          <button type="button" class="btn-text-cancel" id="textCancelBtn">Cancelar</button>
+          <button type="button" class="btn-text-confirm" id="textConfirmBtn">Colocar texto</button>
+        </div>
+      </div>
+
+      <!-- Panel de selección contextual -->
+      <div id="selectionPanel" class="selection-panel" hidden>
+        <span id="selectionLabel" style="font-weight:600;color:#284e42">Elemento</span>
+        <span id="selectionDimensionsBadge" style="font-size:10px;background:#e2ece5;color:#1d4336;padding:2px 6px;border-radius:4px;font-weight:600"></span>
+        <button id="btnDuplicateObj" title="Duplicar selección (+20px)">Duplicar</button>
+        <button id="btnParamCopyToggle" title="Copia paramétrica tipo CAD (@dist<ang o @dx,dy)">📐 Copiar (@)</button>
+
+        <div class="sep-mini"></div>
+
+        <!-- Rotación -->
+        <button id="btnRotateLeft" title="Girar 45° a la izquierda">↶ -45°</button>
+        <button id="btnRotateRight" title="Girar 45° a la derecha">↷ +45°</button>
+        <button id="btnRotate90" title="Girar 90°">↷ 90°</button>
+
+        <div class="sep-mini"></div>
+
+        <!-- Espejo / Reflejo -->
+        <button id="btnMirrorH" title="Reflejar horizontalmente (eje vertical)">|⇄ Espejo H</button>
+        <button id="btnMirrorV" title="Reflejar verticalmente (eje horizontal)">⇅ Espejo V</button>
+        <button id="btnMirrorCopyH" title="Crear copia en espejo a la derecha">🪞+ Copia H</button>
+        <button id="btnMirrorCopyV" title="Crear copia en espejo hacia abajo">🪞+ Copia V</button>
+
+        <div class="sep-mini"></div>
+
+        <button type="button" id="btnScaleDown" title="Reducir al 80%">🔍 -20%</button>
+        <button type="button" id="btnScaleUp" title="Aumentar al 125%">🔍 +25%</button>
+        <button type="button" id="btnScalePrompt" title="Escalar con factor exacto">🔍 Escalar...</button>
+
+        <div class="sep-mini"></div>
+        <div id="selectionRadiusWrap" class="radius-wrap" style="display:none">
+          <span>╭╮</span>
+          <input type="number" id="selRectRadius" min="0" max="100" value="0" step="2" style="width:36px">
+          <span>px</span>
+        </div>
+        <button id="btnEditTextObj" hidden title="Editar texto">✏️ Editar texto</button>
+        <button id="btnDeleteObj" class="btn-del-obj" title="Eliminar (Supr)">Eliminar</button>
+      </div>
+
+      <!-- Popover de Copiado Paramétrico CAD -->
+      <div id="paramCopyPopover" class="param-copy-popover" hidden>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong style="color:#204236;font-size:11.5px">📐 Copiado Paramétrico (CAD)</strong>
+          <button type="button" id="btnCloseParamCopy" style="padding:1px 5px;font-size:12px;color:#707c73">✕</button>
+        </div>
+
+        <div class="param-row">
+          <label for="cadVectorInput">Vector / Desplazamiento:</label>
+          <input type="text" id="cadVectorInput" class="param-input" value="@100<0" style="width:110px" placeholder="@100<0 o @50,30">
+        </div>
+        <div class="param-help">
+          Ejemplos: <b>@100&lt;0</b> (der), <b>@100&lt;90</b> (arriba), <b>@100&lt;180</b> (izq), o <b>@50,20</b> (dx,dy).
+        </div>
+
+        <div class="param-row">
+          <label for="cadCountInput">Cantidad de copias:</label>
+          <input type="number" id="cadCountInput" class="param-input" value="1" min="1" max="100" style="width:55px;text-align:center">
+        </div>
+
+        <div class="param-row">
+          <label for="cadRotStepInput">Giro por copia (°):</label>
+          <input type="number" id="cadRotStepInput" class="param-input" value="0" step="5" style="width:55px;text-align:center">
+        </div>
+
+        <div style="display:flex;justify-content:flex-end;gap:6px;margin-top:2px">
+          <button type="button" id="btnExecuteParamCopy" class="btn-ai-primary" style="padding:4px 10px;font-size:11px">⚡ Generar copias</button>
+        </div>
+      </div>
+
+      <div id="calibrationTarget" class="calibration-target" hidden></div>
+
+      <!-- Regla milimetrada -->
+      <div id="ruler" class="ruler" hidden>
+        <div class="ruler-ticks"></div>
+        <button class="ruler-zero" id="rulerZero" title="Volver a horizontal">0°</button>
+        <button class="ruler-move" id="rulerMove">Mover · <span id="rulerAngle">0°</span></button>
+        <button class="ruler-rotate" id="rulerRotate" title="Arrastra para girar">↻</button>
+      </div>
+
+      <!-- Panel de Capas Flotante y Arrastrable -->
+      <div class="layers-panel" id="layersPanel">
+        <div class="layers-head" id="layersHead" title="Arrastra para mover el panel de capas">
+          <div class="layers-head-title">
+            <span>⠿</span>
+            <span>CAPAS</span>
+          </div>
+          <div class="layers-head-actions">
+            <button class="layers-head-btn" id="collapseLayersBtn" title="Minimizar/expandir panel">▾</button>
+            <button class="layers-head-btn" id="closeLayersBtn" title="Cerrar panel">✕</button>
+          </div>
+        </div>
+        <div class="layers-body" id="layersBody">
+          <div class="layers-toolbar-row">
+            <button class="import-btn" id="newInkLayerBtn">＋ Tinta</button>
+            <label class="import-btn" for="fileInput">＋ Archivo<input id="fileInput" type="file" accept="image/*,.pdf,application/pdf" multiple hidden></label>
+          </div>
+          <div id="layerList"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer con Indicador de Capa Activa -->
+  <footer>
+    <div class="hint">
+      <!-- Indicador Permanente de Capa Actual -->
+      <div class="active-layer-indicator" id="footerActiveLayerBadge" title="Capa de tinta en la que estás dibujando">
+        <span class="active-layer-dot"></span>
+        <span id="sessionState" role="status" style="font-size:10px;margin-right:8px">Sesión: iniciando…</span><span id="footerActiveLayerName">Capa activa: ✎ Tinta 1</span>
+      </div>
+      <span id="status" style="margin-left: 6px;">Listo para escribir</span>
+    </div>
+
+    <!-- Barra de equivalencias métricas y de píxeles -->
+    <div class="hint" style="font-size:10px;color:#5a685e;gap:10px">
+      <span title="Dimensiones de la hoja de trabajo">📐 Hoja: <strong id="sheetDimCm">21.00 × 29.70 cm</strong> <span id="sheetDimPx" style="color:#7d8a81">(794 × 1123 px)</span></span>
+      <span style="color:#cad0c6">|</span>
+      <span title="Coordenadas del cursor en el papel">📍 Cursor: <strong id="cursorPosCm">0.00, 0.00 cm</strong> <span id="cursorPosPx" style="color:#7d8a81">(0, 0 px)</span></span>
+    </div>
+
+    <span class="keyboard">
+      <kbd>H</kbd> mano &nbsp; <kbd>Rueda</kbd> zoom &nbsp; <kbd>S</kbd> mover &nbsp; <kbd>T</kbd> texto &nbsp; <kbd>B</kbd> lápiz &nbsp; <kbd>F3</kbd> limpio &nbsp; <kbd>?</kbd> atajos
+    </span>
+    <span>Tu próxima idea empieza aquí.</span>
+  </footer>
+</main>
+
+<button id="exitCleanView" title="Salir de la vista limpia con F3 o Escape">Salir · F3 / Esc</button>
+<dialog id="shortcutHelp" aria-labelledby="shortcutHeading"><h2 id="shortcutHeading">Atajos del cuaderno</h2><p>Una letra activa la herramienta. No se aplican mientras escribes en un campo de texto.</p><div id="shortcutList"></div><p><kbd>F3 / Mayús+F</kbd> pantalla completa · <kbd>Esc</kbd> salir<br><kbd>Espacio</kbd> mano temporal · <kbd>Ctrl/⌘ Z</kbd> deshacer · <kbd>Ctrl/⌘ Y</kbd> rehacer</p><button class="btn-action" id="closeShortcutHelp">Cerrar</button></dialog>
+<div class="toast" id="toast" role="status"></div>
+
+<dialog id="confirm">
+  <h2>¿Limpiar la página?</h2>
+  <p>Se borrarán los trazos de la capa activa. Podrás recuperarlos con Deshacer.</p>
+  <div class="actions">
+    <button id="cancel">Conservar notas</button>
+    <button id="confirmClear" class="danger">Limpiar página</button>
+  </div>
+</dialog>
+
+<script>
+'use strict';
+
+const $ = s => document.querySelector(s);
+const ink = $('#ink'), bg = $('#background'), preview = $('#preview'), paper = $('#paper');
+const ctx = ink.getContext('2d'), previewCtx = preview.getContext('2d'), bgCtx = bg.getContext('2d');
+
+// Conversión métrica estándar (96 DPI estándar web: 1 pulgada = 2.54 cm -> 1 cm ≈ 37.79527559 px)
+const PX_PER_CM = 96 / 2.54; // ≈ 37.79527559 px/cm
+function cmToPx(cm) { return cm * PX_PER_CM; }
+function pxToCm(px) { return px / PX_PER_CM; }
+
+// Formatos de hoja estándar expresados en CENTÍMETROS (cm)
+const SHEET_PRESETS = {
+  a4_v:   { name: 'A4 VERTICAL',   wCm: 21.0,  hCm: 29.7  },
+  a4_h:   { name: 'A4 HORIZONTAL', wCm: 29.7,  hCm: 21.0  },
+  letter: { name: 'CARTA (LETTER)',wCm: 21.59, hCm: 27.94 },
+  legal:  { name: 'OFICIO (LEGAL)',wCm: 21.59, hCm: 35.56 },
+  a3_v:   { name: 'A3 VERTICAL',   wCm: 29.7,  hCm: 42.0  },
+  a3_h:   { name: 'A3 HORIZONTAL', wCm: 42.0,  hCm: 29.7  },
+  square: { name: 'CUADRADO 1:1',  wCm: 25.0,  hCm: 25.0  },
+  free:   { name: 'LIBRE PANTALLA',wCm: 32.0,  hCm: 21.0  },
+  custom: { name: 'PERSONALIZADO', wCm: 21.0,  hCm: 29.7  }
+};
+
+let currentSheetPreset = 'a4_v';
+let sheetWidth = Math.round(cmToPx(SHEET_PRESETS[currentSheetPreset].wCm));
+let sheetHeight = Math.round(cmToPx(SHEET_PRESETS[currentSheetPreset].hCm));
+
+// Parámetros de Papel y Guías
+let paperPattern = 'grid'; // 'grid', 'lines', 'plain'
+let paperColor = '#fffdf8';
+let paperColorName = 'BLANCO';
+let showRedMargin = true;
+let rectRadius = 0; // en píxeles internamente
+let rectRadiusCm = 0; // en cm
+
+// Cámara (Zoom y Paneo)
+let cleanView=false,cleanCamera=null;
+let zoom = 1;
+let panX = 40;
+let panY = 30;
+let isPanning = false;
+let panStart = { x: 0, y: 0 };
+let spacePressed = false;
+
+// Estado de Modo Celular y Multitáctil
+let mobileModeEnabled = false;
+const activeTouchPointers = new Map(); // pointerId -> { clientX, clientY }
+let isPinching = false;
+let pinchStartDist = 0;
+let pinchStartZoom = 1;
+let pinchStartCenter = { x: 0, y: 0 };
+let pinchStartPan = { x: 0, y: 0 };
+
+// Detección de doble toque (Double Tap) para seleccionar en pantalla táctil
+let lastTapTime = 0;
+let lastTapCoords = { x: 0, y: 0 };
+
+// Estado de Herramientas
+let pressureEnabled = true, pressureSensitivity = 1;
+let tool = 'pen', color = '#292e35', size = 3, inkOpacity = 1;
+let frame = 0, ratio = 1;
+let autoStraight = false, lineMode = false, snapMode = 'end';
+let pickerMode = false, active = null;
+let nextStrokeId = 1;
+
+// Opciones de Tipografía
+const textOptions = {
+  fontFamily: "sans-serif",
+  fontSize: 28,
+  bold: false,
+  italic: false,
+  underline: false,
+  pendingX: 0,
+  pendingY: 0,
+  editingStrokeId: null
+};
+
+// Sistema de Capas
+let layers = []; // Fondos [{ name, image, opacity, visible }]
+let selectedBgLayer = null;
+let inkLayers = [{ name: 'Tinta 1', strokes: [], future: [], opacity: 1, visible: true }];
+let activeInk = 0;
+let history = inkLayers[0].strokes, future = inkLayers[0].future;
+
+// Selección y Transformación de Elementos (Soporte Múltiple)
+let selectedStrokes = [];
+let selectedStroke = null;
+let dragMove = null;
+let rotationDrag = null;
+let marquee = null;
+let curveState = null;
+
+// Regla y Calibración
+const rulerState = { visible: false, x: 500, y: 500, angle: 0, width: 300 };
+let rulerDrag = null;
+const calibrationKey = 'cuaderno-pointer-calib-v4';
+const calibrationTargets = [{ x: 0.17, y: 0.22 }, { x: 0.78, y: 0.72 }, { x: 0.17, y: 0.78 }];
+let calibration = null, calibrationSamples = null;
+
+try {
+  const saved = JSON.parse(localStorage.getItem(calibrationKey) || 'null');
+  if (saved && Array.isArray(saved.matrix) && saved.matrix.length === 6) calibration = saved;
+} catch (e) {}
+
+function notice(s) {
+  const t = $('#toast');
+  t.textContent = s;
+  t.classList.add('show');
+  clearTimeout(notice.timer);
+  notice.timer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function isDark(hex) {
+  const n = parseInt(hex.replace('#',''), 16), r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) < 125;
+}
+
+// Transformaciones de Coordenadas
+function screenToWorld(clientX, clientY) {
+  const r = ink.getBoundingClientRect();
+  const screenX = clientX - r.left;
+  const screenY = clientY - r.top;
+  return {
+    x: (screenX - panX) / zoom,
+    y: (screenY - panY) / zoom
+  };
+}
+
+function worldToScreen(wx, wy) {
+  return {
+    x: wx * zoom + panX,
+    y: wy * zoom + panY
+  };
+}
+
+function point(e) {
+  const w = screenToWorld(e.clientX, e.clientY);
+  return {
+    x: w.x,
+    y: w.y,
+    p: e.pointerType === 'pen' ? (Number.isFinite(e.pressure) ?
+      (e.pressure === 0 && (e.type === 'pointerup' || e.type === 'lostpointercapture') ? (active?.points.at(-1)?.p ?? 0) : Math.max(0,Math.min(1,e.pressure))) : 0.5) : 0
+  };
+}
+
+function applyCameraTransform(c) {
+  c.setTransform(ratio, 0, 0, ratio, 0, 0);
+  c.translate(panX, panY);
+  c.scale(zoom, zoom);
+}
+
+function drawPaperSheet(c) {
+  const w = sheetWidth;
+  const h = sheetHeight;
+
+  // Sombra del papel
+  c.save();
+  c.shadowColor = 'rgba(0,0,0,0.18)';
+  c.shadowBlur = 24;
+  c.shadowOffsetX = 0;
+  c.shadowOffsetY = 8;
+  c.fillStyle = paperColor;
+  c.fillRect(0, 0, w, h);
+  c.restore();
+
+  // Borde sutil exterior
+  c.strokeStyle = 'rgba(0,0,0,0.12)';
+  c.lineWidth = 1 / zoom;
+  c.strokeRect(0, 0, w, h);
+
+  if (paperPattern === 'plain') { drawRedMargins(c); return; }
+
+  const dark = isDark(paperColor);
+  c.save();
+  c.beginPath();
+  c.rect(0, 0, w, h);
+  c.clip();
+
+  // Cuadrícula o Rayado
+  if (paperPattern !== 'plain') {
+    c.strokeStyle = dark ? 'rgba(157,185,176,0.30)' : 'rgba(83,103,94,0.17)';
+    c.lineWidth = 0.7 / zoom;
+    c.beginPath();
+    const step = paperPattern === 'grid' ? 24 : 32;
+    for (let y = step; y < h; y += step) { c.moveTo(0, y); c.lineTo(w, y); }
+    if (paperPattern === 'grid') {
+      for (let x = step; x < w; x += step) { c.moveTo(x, 0); c.lineTo(x, h); }
+    }
+    c.stroke();
+  }
+
+  c.restore();
+  drawRedMargins(c);
+}
+
+// Guías simétricas sobre cualquier fondo, incluidas las imágenes importadas.
+function drawRedMargins(c, viewZoom = zoom) {
+  if (!showRedMargin) return;
+  const w = sheetWidth, h = sheetHeight, margin = Math.round(w * 0.12);
+  c.save();
+  c.globalAlpha = 1;
+  c.globalCompositeOperation = 'source-over';
+  c.strokeStyle = isDark(paperColor) ? '#ee7068' : '#c94440';
+  c.lineWidth = 1.6 / viewZoom;
+  c.beginPath();
+  for (const x of [margin, w - margin]) { c.moveTo(x, 0); c.lineTo(x, h); }
+  c.stroke();
+  c.globalAlpha = 0.45;
+  c.lineWidth = 0.8 / viewZoom;
+  c.beginPath();
+  for (const x of [margin + 4, w - margin - 4]) { c.moveTo(x, 0); c.lineTo(x, h); }
+  c.stroke();
+  c.restore();
+}
+
+function renderBgLayers(c) {
+  const w = sheetWidth, h = sheetHeight;
+  for (const l of layers) {
+    if (!l.visible || !l.image) continue;
+    c.save();
+    c.beginPath();
+    c.rect(0, 0, w, h);
+    c.clip();
+    c.globalAlpha = l.opacity;
+    const lScale = l.scale || 1;
+    c.imageSmoothingEnabled = true;
+    c.imageSmoothingQuality = 'high';
+    const sc = Math.min(w / l.image.width, h / l.image.height) * lScale;
+    const iw = l.image.width * sc, ih = l.image.height * sc;
+    const ox = l.offsetX || 0;
+    const oy = l.offsetY || 0;
+    c.drawImage(l.image, (w - iw) / 2 + ox, (h - ih) / 2 + oy, iw, ih);
+    c.restore();
+  }
+}
+
+function paintBackground() {
+  const r = paper.getBoundingClientRect();
+  bgCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  bgCtx.clearRect(0, 0, r.width, r.height);
+
+  // Mesa de trabajo infinita
+  bgCtx.fillStyle = '#eeece7';
+  bgCtx.fillRect(0, 0, r.width, r.height);
+
+  applyCameraTransform(bgCtx);
+  drawPaperSheet(bgCtx);
+  renderBgLayers(bgCtx);
+  drawRedMargins(bgCtx);
+}
+
+let eraserByObject=false, eraserDiameter=24, observations='', profilePreset='beam-normal', profileHatch=true, parallelCount=2;
+let objectEraseGesture=null;
+function showLaser(e){const dot=$('#laserDot');dot.style.left=e.clientX+'px';dot.style.top=e.clientY+'px';dot.hidden=false;}
+function toggleObservations(open){$('#observationsPanel').hidden=!open;$('#observationsToggle').setAttribute('aria-expanded',String(open));if(open)$('#observationsText').focus();}
+const PROFILE_POLYGONS={
+ 'parallel-horizontal':[], 'parallel-vertical':[],
+ 'beam-normal':[[0,0],[1,0],[1,.32],[.36,.32],[.36,1],[0,1]],
+ 'beam-semi':[[0,0],[.3,0],[.3,.42],[1,.42],[1,.65],[.3,.65],[.3,1],[0,1]],
+ 'beam-inverted':[[0,0],[.36,0],[.36,.68],[1,.68],[1,1],[0,1]],
+ 'steel-i':[[0,0],[1,0],[1,.16],[.58,.16],[.58,.84],[1,.84],[1,1],[0,1],[0,.84],[.42,.84],[.42,.16],[0,.16]],
+ 'steel-lipped':[[0,0],[1,0],[1,.3],[.86,.3],[.86,.14],[.14,.14],[.14,.86],[.86,.86],[.86,.7],[1,.7],[1,1],[0,1]],
+ 'steel-c':[[0,0],[1,0],[1,.14],[.14,.14],[.14,.86],[1,.86],[1,1],[0,1]],
+ 'steel-box':[[0,0],[1,0],[1,1],[0,1]]
+};
+function profileContours(s){
+ const a=s.points[0],b=s.points[1]||a,x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
+ if(s.preset==='parallel-horizontal'||s.preset==='parallel-vertical'){
+  const count=Math.max(2,Math.min(20,Math.round(Number(s.parallelCount)||2)));
+  return Array.from({length:count},(_,i)=>s.preset==='parallel-horizontal'?[{x,y:y+h*i/(count-1)},{x:x+w,y:y+h*i/(count-1)}]:[{x:x+w*i/(count-1),y},{x:x+w*i/(count-1),y:y+h}]);
+ }
+ const contours=[PROFILE_POLYGONS[s.preset]||PROFILE_POLYGONS['beam-normal']];
+ if(s.preset==='steel-box')contours.push([[.16,.14],[.84,.14],[.84,.86],[.16,.86]]);
+ return contours.map(poly=>poly.map(([px,py])=>({x:x+px*w,y:y+py*h})));
+}
+function profilePath(c,contours){c.beginPath();for(const poly of contours){c.moveTo(poly[0].x,poly[0].y);for(const p of poly.slice(1))c.lineTo(p.x,p.y);if(poly.length>2)c.closePath();}}
+function drawProfile(c,s){
+ const contours=profileContours(s);profilePath(c,contours);c.lineWidth=s.size;c.stroke();
+ if(s.hatch&&s.preset.startsWith('beam-')){
+  c.save();profilePath(c,contours);c.clip();const b=getStrokeBounds(s,true);c.lineWidth=Math.max(.7,s.size*.45);c.globalAlpha*=.65;c.beginPath();
+  for(let x=b.minX-(b.maxY-b.minY);x<b.maxX;x+=16){c.moveTo(x,b.maxY);c.lineTo(x+b.maxY-b.minY,b.minY);}c.stroke();c.restore();
+ }
+}
+function distanceToSegment(p,a,b){const dx=b.x-a.x,dy=b.y-a.y,t=Math.max(0,Math.min(1,((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy||1)));return Math.hypot(p.x-a.x-t*dx,p.y-a.y-t*dy);}
+function untransformPoint(s,p){const ctr=getStrokeCenter(s),dx=p.x-ctr.x,dy=p.y-ctr.y,cos=Math.cos(-(s.angle||0)),sin=Math.sin(-(s.angle||0));return {x:ctr.x+(dx*cos-dy*sin)*(s.flipX?-1:1),y:ctr.y+(dx*sin+dy*cos)*(s.flipY?-1:1)};}
+function objectEraseHit(s,p){
+ if(!s.points?.length||s.tool==='eraser'||s.tool==='blend')return false;
+ p=untransformPoint(s,p);const tolerance=Math.max(6/zoom,(s.size||3)/2+3/zoom),pts=s.points;
+ if(s.tool==='profile')return profileContours(s).some(poly=>poly.some((a,i)=>distanceToSegment(p,a,poly[(i+1)%poly.length])<=tolerance));
+ if(['pen','vector','graphite','marker','highlighter','watercolor','line'].includes(s.tool))return pts.some((a,i)=>distanceToSegment(p,a,pts[i+1]||a)<=tolerance);
+ if(s.tool==='circle'){const a=pts[0],b=pts[1]||a;return Math.abs(Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(b.x-a.x,b.y-a.y))<=tolerance;}
+ if(s.tool==='ellipse'){const a=pts[0],b=pts[1]||a,rx=Math.abs(b.x-a.x)/2,ry=Math.abs(b.y-a.y)/2;return rx>0&&ry>0&&Math.abs(Math.hypot((p.x-(a.x+b.x)/2)/rx,(p.y-(a.y+b.y)/2)/ry)-1)*Math.min(rx,ry)<=tolerance;}
+ if(s.tool==='rect'){const a=pts[0],b=pts[1]||a,poly=[a,{x:b.x,y:a.y},b,{x:a.x,y:b.y}];return poly.some((a,i)=>distanceToSegment(p,a,poly[(i+1)%4])<=tolerance);}
+ if(s.tool==='curve'){const a=pts[0],b=pts[1]||a,q=pts[2]||a;let last=a;for(let i=1;i<=48;i++){const t=i/48,u=1-t,next={x:u*u*a.x+2*u*t*q.x+t*t*b.x,y:u*u*a.y+2*u*t*q.y+t*t*b.y};if(distanceToSegment(p,last,next)<=tolerance)return true;last=next;}return false;}
+ if(s.tool==='arrow'){const a=pts[0],b=pts[1]||a;return distanceToSegment(p,a,b)<=tolerance;}
+ const box=getStrokeBounds(s,true);return !!box&&p.x>=box.minX&&p.x<=box.maxX&&p.y>=box.minY&&p.y<=box.maxY;
+}
+function eraseObjectAt(e){
+ const pt=point(e),hit=[...currentStrokes()].reverse().find(s=>objectEraseHit(s,pt));if(!hit)return;
+ if(!objectEraseGesture.entry){objectEraseGesture.entry={id:'elem-'+nextStrokeId++,tool:'eraseObjects',points:[],erasedIds:[]};history.push(objectEraseGesture.entry);future=[];inkLayers[activeInk].future=future;}
+ objectEraseGesture.entry.erasedIds.push(hit.id);selectedStrokes=[];selectedStroke=null;render();
+}
+function visibleInkStrokes(list) {
+  let start = 0;
+  for (let i = list.length - 1; i >= 0; i--) {
+    if (list[i].clear) { start = i + 1; break; }
+  }
+  const items = list.slice(start);
+  const replaced = new Set(items.flatMap(s => s.erasedIds || (s.replaces ? [s.replaces] : [])));
+  return items.filter(s => !s.clear && !s.hidden && s.tool !== 'eraseObjects' && !replaced.has(s.id));
+}
+
+function currentStrokes() { return visibleInkStrokes(history); }
+
+function allStrokes() {
+  return inkLayers.flatMap(il => il.visible === false ? [] : visibleInkStrokes(il.strokes));
+}
+
+function ensureStrokeId(s) {
+  if (!s.id) s.id = 'elem-' + (nextStrokeId++);
+  return s.id;
+}
+
+function configure(c, s) {
+  c.globalCompositeOperation = ['eraser','blend'].includes(s.tool) ? 'destination-out' : 'source-over';
+  c.strokeStyle = s.color;
+  c.fillStyle = s.color;
+  c.lineCap = s.tool === 'highlighter' ? 'square' : 'round';
+  c.lineJoin = 'round';
+}
+
+function strokeWidth(s, p) {
+  let base = s.size;
+  if (s.tool === 'marker') base *= 1.8;
+  else if (s.tool === 'highlighter') base = Math.max(14, base * 5);
+  else if (s.tool === 'watercolor') base = Math.max(7, base * 2.5);
+  if (s.pressure && ['pen','graphite','marker','highlighter','watercolor'].includes(s.tool)) {
+    const value = Math.max(0, Math.min(1, p?.p ?? .5));
+    return base * (.2 + 1.6 * Math.pow(value, 1 / (s.sensitivity || 1)));
+  }
+  if (s.tool === 'marker') return s.size * 1.8;
+  if (s.tool === 'highlighter') return Math.max(14, s.size * 5);
+  if (s.tool === 'watercolor') return Math.max(7, s.size * 2.5);
+  if (['eraser','blend','vector'].includes(s.tool)) return s.size;
+  return s.size;
+}
+
+// Un solo relleno evita puntos oscuros por superposición con tinta transparente.
+function pressureGeometry(c,s) {
+  const pts=s.points;
+  if(!pts?.length) return;
+  c.beginPath();
+  for(let i=0;i<pts.length;i++) {
+    const p=pts[i],r=strokeWidth(s,p)/2;
+    c.moveTo(p.x+r,p.y); c.arc(p.x,p.y,r,0,Math.PI*2);
+    if(!i) continue;
+    const a=pts[i-1],ar=strokeWidth(s,a)/2,dx=p.x-a.x,dy=p.y-a.y,len=Math.hypot(dx,dy);
+    if(!len) continue;
+    const nx=-dy/len,ny=dx/len;
+    c.moveTo(a.x+nx*ar,a.y+ny*ar);
+    c.lineTo(a.x-nx*ar,a.y-ny*ar);
+    c.lineTo(p.x-nx*r,p.y-ny*r);
+    c.lineTo(p.x+nx*r,p.y+ny*r); c.closePath();
+  }
+  c.fill();
+}
+function continuousGeometry(c, s) {
+  if(s.pressure) { pressureGeometry(c,s); return; }
+  const pts = s.points;
+  if (!pts || !pts.length) return;
+  if (pts.length < 2) {
+    c.beginPath();
+    c.arc(pts[0].x, pts[0].y, strokeWidth(s, pts[0]) / 2, 0, Math.PI * 2);
+    c.fill();
+    return;
+  }
+  c.lineWidth = strokeWidth(s, pts[0]);
+  c.beginPath();
+  c.moveTo(pts[0].x, pts[0].y);
+  for (let i = 1; i < pts.length - 1; i++) {
+    c.quadraticCurveTo(pts[i].x, pts[i].y, (pts[i].x + pts[i + 1].x) / 2, (pts[i].y + pts[i + 1].y) / 2);
+  }
+  c.lineTo(pts.at(-1).x, pts.at(-1).y);
+  c.stroke();
+}
+
+function freehandGeometry(c, s) {
+  // Una sola operación conserva la opacidad, incluso en uniones y cruces.
+  continuousGeometry(c, s);
+}
+
+function drawArrowShape(c, a, b, sw) {
+  const headLen = Math.max(12, sw * 3.6);
+  const angle = Math.atan2(b.y - a.y, b.x - a.x);
+  c.lineWidth = sw;
+  c.beginPath();
+  c.moveTo(a.x, a.y);
+  c.lineTo(b.x, b.y);
+  c.stroke();
+
+  c.beginPath();
+  c.moveTo(b.x, b.y);
+  c.lineTo(b.x - headLen * Math.cos(angle - Math.PI / 6), b.y - headLen * Math.sin(angle - Math.PI / 6));
+  c.lineTo(b.x - headLen * Math.cos(angle + Math.PI / 6), b.y - headLen * Math.sin(angle + Math.PI / 6));
+  c.closePath();
+  c.fill();
+}
+
+function drawCloudShape(c, a, b, sw) {
+  const minX = Math.min(a.x, b.x), maxX = Math.max(a.x, b.x);
+  const minY = Math.min(a.y, b.y), maxY = Math.max(a.y, b.y);
+  const w = Math.max(28, maxX - minX), h = Math.max(22, maxY - minY);
+  const cx = minX + w / 2, cy = minY + h / 2;
+  const numArcs = 8;
+  const rx = w / 2, ry = h / 2;
+
+  c.lineWidth = sw;
+  c.beginPath();
+  for (let i = 0; i < numArcs; i++) {
+    const th1 = (i / numArcs) * Math.PI * 2;
+    const th2 = ((i + 1) / numArcs) * Math.PI * 2;
+    const x1 = cx + rx * Math.cos(th1), y1 = cy + ry * Math.sin(th1);
+    const x2 = cx + rx * Math.cos(th2), y2 = cy + ry * Math.sin(th2);
+    const midTh = (th1 + th2) / 2;
+    const ctrlX = cx + rx * 1.22 * Math.cos(midTh);
+    const ctrlY = cy + ry * 1.22 * Math.sin(midTh);
+    if (i === 0) c.moveTo(x1, y1);
+    c.quadraticCurveTo(ctrlX, ctrlY, x2, y2);
+  }
+  c.closePath();
+  c.stroke();
+}
+
+function drawRichText(c, s) {
+  if (!s.text) return;
+  const fSize = s.fontSize || 28;
+  const fFamily = s.fontFamily || 'sans-serif';
+  const weight = s.bold ? 'bold ' : '';
+  const style = s.italic ? 'italic ' : '';
+  c.font = `${style}${weight}${fSize}px ${fFamily}`;
+  c.fillStyle = s.color;
+  c.textBaseline = 'top';
+
+  const lines = s.text.split('\n');
+  const lineHeight = fSize * 1.28;
+  const startX = s.points[0].x;
+  const startY = s.points[0].y;
+
+  lines.forEach((lineText, idx) => {
+    const lineY = startY + idx * lineHeight;
+    c.fillText(lineText, startX, lineY);
+    if (s.underline) {
+      const w = c.measureText(lineText).width;
+      c.save();
+      c.strokeStyle = s.color;
+      c.lineWidth = Math.max(1, fSize * 0.08);
+      c.beginPath();
+      c.moveTo(startX, lineY + fSize * 1.08);
+      c.lineTo(startX + w, lineY + fSize * 1.08);
+      c.stroke();
+      c.restore();
+    }
+  });
+}
+
+function getStrokeCenter(s) {
+  const box = getStrokeBounds(s, true);
+  if (!box) return { x: 0, y: 0 };
+  return {
+    x: (box.minX + box.maxX) / 2,
+    y: (box.minY + box.maxY) / 2
+  };
+}
+
+function stroke(c, s) {
+  c.save();
+  if (s.angle || s.flipX || s.flipY) {
+    const ctr = getStrokeCenter(s);
+    c.translate(ctr.x, ctr.y);
+    if (s.angle) c.rotate(s.angle);
+    if (s.flipX || s.flipY) c.scale(s.flipX ? -1 : 1, s.flipY ? -1 : 1);
+    c.translate(-ctr.x, -ctr.y);
+  }
+  configure(c, s);
+  c.globalAlpha *= (s.opacity ?? 1);
+  const base = s.size;
+  const alpha = c.globalAlpha;
+
+  if (s.tool === 'profile') {
+    drawProfile(c,s);
+  } else if (s.tool === 'text') {
+    drawRichText(c, s);
+  } else if (s.tool === 'fill' && s.canvasImage) {
+    c.drawImage(s.canvasImage, 0, 0);
+  } else if (s.tool === 'rect') {
+    const a = s.points[0], b = s.points[1] || a;
+    c.lineWidth = s.size;
+    const minX = Math.min(a.x, b.x), minY = Math.min(a.y, b.y);
+    const rw = Math.abs(b.x - a.x), rh = Math.abs(b.y - a.y);
+    const rad = Math.min(s.radius || 0, rw / 2, rh / 2);
+    c.beginPath();
+    if (rad > 0 && typeof c.roundRect === 'function') {
+      c.roundRect(minX, minY, rw, rh, rad);
+    } else if (rad > 0) {
+      c.moveTo(minX + rad, minY);
+      c.arcTo(minX + rw, minY, minX + rw, minY + rh, rad);
+      c.arcTo(minX + rw, minY + rh, minX, minY + rh, rad);
+      c.arcTo(minX, minY + rh, minX, minY, rad);
+      c.arcTo(minX, minY, minX + rw, minY, rad);
+      c.closePath();
+    } else {
+      c.rect(minX, minY, rw, rh);
+    }
+    c.stroke();
+  } else if (s.tool === 'curve') {
+    const a = s.points[0], b = s.points[1] || a;
+    const ctrl = s.points[2] || { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    c.lineWidth = s.size;
+    c.beginPath();
+    c.moveTo(a.x, a.y);
+    c.quadraticCurveTo(ctrl.x, ctrl.y, b.x, b.y);
+    c.stroke();
+  } else if (s.tool === 'circle') {
+    const a = s.points[0], b = s.points[1] || a;
+    c.lineWidth = s.size;
+    c.beginPath();
+    c.arc(a.x, a.y, Math.hypot(b.x - a.x, b.y - a.y), 0, Math.PI * 2);
+    c.stroke();
+  } else if (s.tool === 'ellipse') {
+    const a = s.points[0], b = s.points[1] || a;
+    c.lineWidth = s.size;
+    c.beginPath();
+    c.ellipse((a.x + b.x) / 2, (a.y + b.y) / 2, Math.max(Math.abs(b.x - a.x) / 2, 0.01), Math.max(Math.abs(b.y - a.y) / 2, 0.01), 0, 0, Math.PI * 2);
+    c.stroke();
+  } else if (s.tool === 'arrow') {
+    const a = s.points[0], b = s.points[1] || a;
+    drawArrowShape(c, a, b, s.size);
+  } else if (s.tool === 'cloud') {
+    const a = s.points[0], b = s.points[1] || a;
+    drawCloudShape(c, a, b, s.size);
+  } else if (s.tool === 'line') {
+    const a = s.points[0], b = s.points[1] || a;
+    c.lineWidth = s.size;
+    c.beginPath();
+    c.moveTo(a.x, a.y);
+    c.lineTo(b.x, b.y);
+    c.stroke();
+  } else if (s.tool === 'blend') {
+    for (const [factor, op] of [[1.8, 0.045], [1.25, 0.075], [0.72, 0.13]]) {
+      s.size = base * factor;
+      c.globalAlpha = alpha * op;
+      continuousGeometry(c, s);
+    }
+  } else if (s.tool === 'watercolor') {
+    for (const [factor, op] of [[1.55, 0.08], [1.05, 0.13], [0.6, 0.2]]) {
+      s.size = base * factor;
+      c.globalAlpha = alpha * op;
+      continuousGeometry(c, s);
+    }
+  } else if (['graphite','marker','highlighter'].includes(s.tool)) {
+    c.globalAlpha = alpha * ({ graphite: 0.62, marker: 0.7, highlighter: 0.22 }[s.tool] || 1);
+    continuousGeometry(c, s);
+  } else {
+    freehandGeometry(c, s);
+  }
+
+  s.size = base;
+  c.restore();
+}
+
+function getStrokeBounds(s, unrotated = false) {
+  if (s.tool === 'text') {
+    const fSize = s.fontSize || 28;
+    const fFamily = s.fontFamily || 'sans-serif';
+    const weight = s.bold ? 'bold ' : '';
+    const style = s.italic ? 'italic ' : '';
+    previewCtx.save();
+    previewCtx.font = `${style}${weight}${fSize}px ${fFamily}`;
+    const lines = (s.text || '').split('\n');
+    let maxW = 30;
+    lines.forEach(l => { maxW = Math.max(maxW, previewCtx.measureText(l).width); });
+    previewCtx.restore();
+    const h = lines.length * (fSize * 1.28);
+    return { minX: s.points[0].x - 4, minY: s.points[0].y - 4, maxX: s.points[0].x + maxW + 4, maxY: s.points[0].y + h + 4 };
+  }
+  if (!s.points || !s.points.length) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const p of s.points) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  const pad = Math.max(8, (s.size || 3) * 1.5);
+  return { minX: minX - pad, minY: minY - pad, maxX: maxX + pad, maxY: maxY + pad };
+}
+
+function getGroupBounds(strokes) {
+  if (!strokes || !strokes.length) return null;
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const s of strokes) {
+    const b = getStrokeBounds(s, false);
+    if (!b) continue;
+    minX = Math.min(minX, b.minX);
+    minY = Math.min(minY, b.minY);
+    maxX = Math.max(maxX, b.maxX);
+    maxY = Math.max(maxY, b.maxY);
+  }
+  if (!isFinite(minX)) return null;
+  return { minX, minY, maxX, maxY };
+}
+
+function getGroupCenter(strokes) {
+  const box = getGroupBounds(strokes);
+  if (!box) return { x: 0, y: 0 };
+  return { x: (box.minX + box.maxX) / 2, y: (box.minY + box.maxY) / 2 };
+}
+
+function hitTestStroke(s, pt) {
+  const box = getStrokeBounds(s, true);
+  if (!box) return false;
+  let testPt = pt;
+  if (s.angle) {
+    const ctr = getStrokeCenter(s);
+    const cos = Math.cos(-s.angle);
+    const sin = Math.sin(-s.angle);
+    const dx = pt.x - ctr.x;
+    const dy = pt.y - ctr.y;
+    testPt = {
+      x: ctr.x + dx * cos - dy * sin,
+      y: ctr.y + dx * sin + dy * cos
+    };
+  }
+  return testPt.x >= box.minX && testPt.x <= box.maxX && testPt.y >= box.minY && testPt.y <= box.maxY;
+}
+
+function getGroupRotationHandlePos(strokes) {
+  const box = getGroupBounds(strokes);
+  if (!box) return null;
+  const ctr = getGroupCenter(strokes);
+  const hh = (box.maxY - box.minY) / 2;
+  const handleDist = 26 / zoom;
+  return { x: ctr.x, y: ctr.y - hh - handleDist };
+}
+
+function hitTestGroupRotationHandle(strokes, pt) {
+  const hPos = getGroupRotationHandlePos(strokes);
+  if (!hPos) return false;
+  return Math.hypot(pt.x - hPos.x, pt.y - hPos.y) <= (16 / zoom);
+}
+
+function drawGroupSelectionBox(c, strokes) {
+  const box = getGroupBounds(strokes);
+  if (!box) return;
+  const ctr = getGroupCenter(strokes);
+
+  c.save();
+  c.strokeStyle = '#2b6b55';
+  c.lineWidth = 1.5 / zoom;
+  c.setLineDash([5 / zoom, 4 / zoom]);
+  c.strokeRect(box.minX, box.minY, box.maxX - box.minX, box.maxY - box.minY);
+
+  c.fillStyle = '#fffdf7';
+  c.setLineDash([]);
+  const corners = [
+    { x: box.minX, y: box.minY },
+    { x: box.maxX, y: box.minY },
+    { x: box.minX, y: box.maxY },
+    { x: box.maxX, y: box.maxY }
+  ];
+  for (const cr of corners) {
+    c.beginPath();
+    c.arc(cr.x, cr.y, 4 / zoom, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+  }
+
+  // Manilla superior de rotación grupal
+  const hh = (box.maxY - box.minY) / 2;
+  const handleDist = 26 / zoom;
+  const hPos = { x: ctr.x, y: ctr.y - hh - handleDist };
+
+  c.beginPath();
+  c.strokeStyle = '#2b6b55';
+  c.lineWidth = 1.4 / zoom;
+  c.moveTo(ctr.x, box.minY);
+  c.lineTo(hPos.x, hPos.y);
+  c.stroke();
+
+  c.beginPath();
+  c.fillStyle = '#39e68c';
+  c.arc(hPos.x, hPos.y, 5.5 / zoom, 0, Math.PI * 2);
+  c.fill();
+  c.stroke();
+
+  c.restore();
+}
+
+function drawPreview() {
+  const r = paper.getBoundingClientRect();
+  previewCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  previewCtx.clearRect(0, 0, r.width, r.height);
+
+  applyCameraTransform(previewCtx);
+
+  if (active && !['eraser','blend'].includes(active.tool)) {
+    previewCtx.globalAlpha = inkLayers[activeInk]?.opacity ?? 1;
+    stroke(previewCtx, active);
+  }
+
+  if (selectedStrokes.length > 0) {
+    drawGroupSelectionBox(previewCtx, selectedStrokes);
+  }
+
+  // Dibujar marquesina de selección múltiple
+  if (marquee) {
+    previewCtx.save();
+    const mx = Math.min(marquee.startX, marquee.currentX);
+    const my = Math.min(marquee.startY, marquee.currentY);
+    const mw = Math.abs(marquee.currentX - marquee.startX);
+    const mh = Math.abs(marquee.currentY - marquee.startY);
+    previewCtx.fillStyle = 'rgba(49, 88, 77, 0.12)';
+    previewCtx.fillRect(mx, my, mw, mh);
+    previewCtx.strokeStyle = '#275446';
+    previewCtx.lineWidth = 1 / zoom;
+    previewCtx.setLineDash([4 / zoom, 3 / zoom]);
+    previewCtx.strokeRect(mx, my, mw, mh);
+    previewCtx.restore();
+  }
+}
+
+function render() {
+  const r = paper.getBoundingClientRect();
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  ctx.clearRect(0, 0, r.width, r.height);
+
+  paintBackground();
+  applyCameraTransform(ctx);
+
+  for (const il of inkLayers) {
+    if (il.visible === false) continue;
+    ctx.globalAlpha = il.opacity ?? 1;
+    for (const s of visibleInkStrokes(il.strokes)) stroke(ctx, s);
+  }
+
+  ctx.globalAlpha = 1;
+  if (active && ['eraser','blend'].includes(active.tool)) stroke(ctx, active);
+
+  drawPreview();
+  updateUI();
+  updateRulerPosition();
+}
+
+function updateUI() {
+  $('#undo').disabled = !history.length;
+  $('#redo').disabled = !future.length;
+  $('#clear').disabled = !currentStrokes().length;
+
+  // Actualizar indicador de hoja en centímetros y equivalencia en píxeles
+  const curWCm = pxToCm(sheetWidth);
+  const curHCm = pxToCm(sheetHeight);
+  const sheetDimCmEl = $('#sheetDimCm');
+  const sheetDimPxEl = $('#sheetDimPx');
+  if (sheetDimCmEl) sheetDimCmEl.textContent = `${curWCm.toFixed(2)} × ${curHCm.toFixed(2)} cm`;
+  if (sheetDimPxEl) sheetDimPxEl.textContent = `(${Math.round(sheetWidth)} × ${Math.round(sheetHeight)} px)`;
+
+  const selPanel = $('#selectionPanel');
+  if (tool === 'select' && selectedStrokes.length > 0) {
+    selPanel.hidden = false;
+    const isSingle = selectedStrokes.length === 1;
+    const singleText = isSingle && selectedStrokes[0].tool === 'text';
+    const singleRect = isSingle && selectedStrokes[0].tool === 'rect';
+
+    $('#btnEditTextObj').hidden = !singleText;
+    const radiusWrap = $('#selectionRadiusWrap');
+    if (radiusWrap) {
+      radiusWrap.style.display = singleRect ? 'inline-flex' : 'none';
+      if (singleRect) {
+        const radCm = pxToCm(selectedStrokes[0].radius || 0);
+        $('#selRectRadius').value = radCm.toFixed(1);
+      }
+    }
+
+    // Cálculo y muestra de dimensiones del objeto seleccionado en cm y px
+    const b = getGroupBounds(selectedStrokes);
+    const badge = $('#selectionDimensionsBadge');
+    if (b && badge) {
+      const wPx = Math.max(0, b.maxX - b.minX);
+      const hPx = Math.max(0, b.maxY - b.minY);
+      const wCm = pxToCm(wPx);
+      const hCm = pxToCm(hPx);
+      badge.textContent = `📏 ${wCm.toFixed(2)} × ${hCm.toFixed(2)} cm (${Math.round(wPx)} × ${Math.round(hPx)} px)`;
+    }
+
+    if (isSingle) {
+      const s = selectedStrokes[0];
+      const deg = Math.round(((s.angle || 0) * 180 / Math.PI) % 360);
+      $('#selectionLabel').textContent = (s.tool === 'text' ? 'Texto' : s.tool === 'rect' ? 'Rectángulo' : 'Elemento') + (deg !== 0 ? ` (${deg}°)` : '');
+    } else {
+      $('#selectionLabel').textContent = `${selectedStrokes.length} elementos`;
+    }
+  } else {
+    selPanel.hidden = true;
+    $('#paramCopyPopover').hidden = true;
+  }
+
+  $('#zoomValueBtn').textContent = Math.round(zoom * 100) + '%';
+  ink.style.cursor = (tool === 'pan' || isPanning || spacePressed) ? (isPanning ? 'grabbing' : 'grab') : 'crosshair';
+
+  // Actualizar Indicador Fijo de Capa Activa
+  const activeLayerObj = inkLayers[activeInk];
+  const activeName = activeLayerObj ? activeLayerObj.name : 'Capa 1';
+  $('#footerActiveLayerName').textContent = `Capa activa: ✎ ${activeName}`;
+}
+
+let previousViewport = null;
+function resize() {
+  if (active) finish();
+  const r = paper.getBoundingClientRect();
+  ratio = Math.min(window.devicePixelRatio || 1, 3);
+
+  for (const c of [ink, bg, preview]) {
+    c.width = Math.round(r.width * ratio);
+    c.height = Math.round(r.height * ratio);
+  }
+
+  if (cleanView) {
+    resetView();
+    previousViewport = {width:r.width, height:r.height};
+    return;
+  }
+
+  if (previousViewport && mobileModeEnabled && (Math.abs(previousViewport.width-r.width)>2 || Math.abs(previousViewport.height-r.height)>2)) {
+    resetView();
+  } else render();
+  previousViewport = {width:r.width, height:r.height};
+  placeCalibrationTarget();
+}
+
+function setZoomAround(newZoom, clientX, clientY) {
+  const r = ink.getBoundingClientRect();
+  const mouseX = clientX !== undefined ? clientX - r.left : r.width / 2;
+  const mouseY = clientY !== undefined ? clientY - r.top : r.height / 2;
+
+  const targetZoom = Math.max(0.08, Math.min(5.0, newZoom));
+  if (Math.abs(targetZoom - zoom) < 0.001) return;
+
+  panX = mouseX - (mouseX - panX) * (targetZoom / zoom);
+  panY = mouseY - (mouseY - panY) * (targetZoom / zoom);
+  zoom = targetZoom;
+
+  render();
+}
+
+function resetView() {
+  const r = paper.getBoundingClientRect();
+  const padding = cleanView ? 16 : mobileModeEnabled ? 12 : 36;
+  const scaleX = (r.width - padding * 2) / sheetWidth;
+  const scaleY = (r.height - padding * 2) / sheetHeight;
+  zoom = Math.min(1.0, Math.max(0.08, Math.min(scaleX, scaleY)));
+  panX = (r.width - sheetWidth * zoom) / 2;
+  panY = (r.height - sheetHeight * zoom) / 2;
+  render();
+}
+
+// Selector de Tamaño de Papel (en Centímetros)
+$('#sheetFormatSelect').onchange = e => {
+  currentSheetPreset = e.target.value;
+  const wInput = $('#customSheetW');
+  const hInput = $('#customSheetH');
+  if (currentSheetPreset === 'custom') {
+    const cwCm = Math.max(2, parseFloat(wInput ? wInput.value : 21.0) || 21.0);
+    const chCm = Math.max(2, parseFloat(hInput ? hInput.value : 29.7) || 29.7);
+    sheetWidth = Math.round(cmToPx(cwCm));
+    sheetHeight = Math.round(cmToPx(chCm));
+    SHEET_PRESETS.custom.wCm = cwCm;
+    SHEET_PRESETS.custom.hCm = chCm;
+    $('#paperName').textContent = `${paperPattern === 'grid' ? 'CUADRICULADO' : paperPattern === 'lines' ? 'RAYADO' : 'LISO'} · ${paperColorName} (PERSONALIZADO: ${cwCm.toFixed(1)}×${chCm.toFixed(1)} cm · ${sheetWidth}×${sheetHeight} px)`;
+    notice(`Lienzo configurado a ${cwCm.toFixed(1)} × ${chCm.toFixed(1)} cm (${sheetWidth} × ${sheetHeight} px)`);
+    document.querySelector('.cat-btn[data-target="panelSheet"]')?.click();
+  } else {
+    const p = SHEET_PRESETS[currentSheetPreset];
+    sheetWidth = Math.round(cmToPx(p.wCm));
+    sheetHeight = Math.round(cmToPx(p.hCm));
+    if (wInput) wInput.value = p.wCm;
+    if (hInput) hInput.value = p.hCm;
+    $('#paperName').textContent = `${paperPattern === 'grid' ? 'CUADRICULADO' : paperPattern === 'lines' ? 'RAYADO' : 'LISO'} · ${paperColorName} (${p.name} · ${p.wCm}×${p.hCm} cm)`;
+    notice(`Lienzo ajustado a ${p.name}: ${p.wCm} × ${p.hCm} cm (${sheetWidth} × ${sheetHeight} px)`);
+  }
+  resetView();
+};
+
+const btnApplyCustomSheet = $('#btnApplyCustomSheet');
+if (btnApplyCustomSheet) {
+  btnApplyCustomSheet.onclick = () => {
+    const wInput = $('#customSheetW');
+    const hInput = $('#customSheetH');
+    const cwCm = Math.max(2, parseFloat(wInput ? wInput.value : 21.0) || 21.0);
+    const chCm = Math.max(2, parseFloat(hInput ? hInput.value : 29.7) || 29.7);
+    const sel = $('#sheetFormatSelect');
+    if (sel) sel.value = 'custom';
+    currentSheetPreset = 'custom';
+    sheetWidth = Math.round(cmToPx(cwCm));
+    sheetHeight = Math.round(cmToPx(chCm));
+    SHEET_PRESETS.custom.wCm = cwCm;
+    SHEET_PRESETS.custom.hCm = chCm;
+    $('#paperName').textContent = `${paperPattern === 'grid' ? 'CUADRICULADO' : paperPattern === 'lines' ? 'RAYADO' : 'LISO'} · ${paperColorName} (PERSONALIZADO: ${cwCm.toFixed(1)}×${chCm.toFixed(1)} cm · ${sheetWidth}×${sheetHeight} px)`;
+    resetView();
+    notice(`Lienzo personalizado aplicado: ${cwCm.toFixed(1)} × ${chCm.toFixed(1)} cm (${sheetWidth} × ${sheetHeight} px)`);
+  };
+}
+
+// Navegación entre Paneles de Categorías (Dibujo, Edición, Hoja, Todo)
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.target;
+    const sections = ['panelBrush', 'panelDraw', 'panelEdit', 'panelSheet'];
+
+    if (target === 'panelAll') {
+      sections.forEach(id => {
+        const el = $('#' + id);
+        if (el) el.hidden = false;
+      });
+    } else {
+      sections.forEach(id => {
+        const el = $('#' + id);
+        if (el) el.hidden = (id !== target);
+      });
+    }
+  };
+});
+
+$('#showRedMargin').onchange = e => {
+  showRedMargin = e.target.checked;
+  render();
+  notice(showRedMargin ? 'Margen rojo visible' : 'Margen rojo oculto');
+};
+
+$('#zoomInBtn').onclick = () => setZoomAround(zoom * 1.25);
+$('#zoomOutBtn').onclick = () => setZoomAround(zoom / 1.25);
+$('#zoomValueBtn').onclick = () => {
+  const r = paper.getBoundingClientRect();
+  setZoomAround(1.0, r.left + r.width / 2, r.top + r.height / 2);
+};
+$('#zoomResetBtn').onclick = resetView;
+
+paper.addEventListener('wheel', e => {
+  e.preventDefault();
+  const factor = e.deltaY < 0 ? 1.12 : 0.89;
+  setZoomAround(zoom * factor, e.clientX, e.clientY);
+}, { passive: false });
+
+// Regla y guías
+function updateRulerPosition() {
+  if (!rulerState.visible) return;
+  const scr = worldToScreen(rulerState.x, rulerState.y);
+  const el = $('#ruler');
+  const screenWidth = rulerState.width * zoom;
+  el.style.width = screenWidth + 'px';
+  el.style.left = (scr.x - screenWidth / 2) + 'px';
+  el.style.top = (scr.y - 27 * zoom) + 'px';
+  el.style.transform = `rotate(${rulerState.angle}rad)`;
+  $('#rulerAngle').textContent = Math.round(rulerState.angle * 180 / Math.PI) + '°';
+}
+
+function rulerGuide(p) {
+  if (!rulerState.visible || tool !== 'pen') return null;
+  const c = Math.cos(rulerState.angle), sn = Math.sin(rulerState.angle);
+  const dx = p.x - rulerState.x, dy = p.y - rulerState.y;
+  const u = dx * c + dy * sn, v = -dx * sn + dy * c;
+  if (Math.abs(u) > rulerState.width / 2 + 18 || Math.abs(Math.abs(v) - 27) > 20) return null;
+  const edge = v < 0 ? -27 : 27;
+  return { x: rulerState.x - sn * edge, y: rulerState.y + c * edge, dx: c, dy: sn };
+}
+
+function projectToGuide(p, g) {
+  const t = (p.x - g.x) * g.dx + (p.y - g.y) * g.dy;
+  return { x: g.x + t * g.dx, y: g.y + t * g.dy, p: 0 };
+}
+
+// OSNAP
+function segments() {
+  const out = [];
+  for (const s of allStrokes()) {
+    if (s.points && s.points.length > 1) {
+      for (let i = 1; i < s.points.length; i++) out.push([s.points[i - 1], s.points[i]]);
+    }
+  }
+  return out;
+}
+
+function distancePointSegment(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  if (!l2) return { x: a.x, y: a.y, d: Math.hypot(p.x - a.x, p.y - a.y) };
+  const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2));
+  return { x: a.x + t * dx, y: a.y + t * dy, d: Math.hypot(p.x - (a.x + t * dx), p.y - (a.y + t * dy)) };
+}
+
+function snapPoint(p) {
+  if (!lineMode) return p;
+  const th = 16 / zoom;
+  let best = null;
+  const ss = segments();
+  if (snapMode === 'end') {
+    for (const [a, b] of ss) {
+      for (const q of [a, b]) {
+        const d = Math.hypot(p.x - q.x, p.y - q.y);
+        if (d < th && (!best || d < best.d)) best = { x: q.x, y: q.y, d };
+      }
+    }
+  } else if (snapMode === 'nea') {
+    for (const [a, b] of ss) {
+      const q = distancePointSegment(p, a, b);
+      if (q.d < th && (!best || q.d < best.d)) best = q;
+    }
+  }
+  return best ? { x: best.x, y: best.y, p: 0 } : p;
+}
+
+function isNearlyStraight(points) {
+  if (points.length < 3) return false;
+  const a = points[0], b = points.at(-1), dx = b.x - a.x, dy = b.y - a.y, len = Math.hypot(dx, dy);
+  if (len < 55) return false;
+  let traveled = 0, maxDistance = 0;
+  for (let i = 1; i < points.length; i++) {
+    const p = points[i], prev = points[i - 1];
+    traveled += Math.hypot(p.x - prev.x, p.y - prev.y);
+    maxDistance = Math.max(maxDistance, Math.abs(dy * (p.x - a.x) - dx * (p.y - a.y)) / len);
+  }
+  return (traveled / len < 1.14) && maxDistance <= Math.min(8, len * 0.025);
+}
+
+function floodFill(startX, startY, fillColorHex, fillOpacity) {
+  const w = sheetWidth, h = sheetHeight;
+  if (startX < 0 || startX >= w || startY < 0 || startY >= h) return;
+
+  const tempCv = document.createElement('canvas');
+  tempCv.width = w; tempCv.height = h;
+  const tCtx = tempCv.getContext('2d');
+  for (const il of inkLayers) {
+    if (il.visible === false) continue;
+    tCtx.globalAlpha = il.opacity ?? 1;
+    for (const s of visibleInkStrokes(il.strokes)) stroke(tCtx, s);
+  }
+
+  const px = Math.round(startX);
+  const py = Math.round(startY);
+  const imgData = tCtx.getImageData(0, 0, w, h);
+  const data = imgData.data;
+  const startIdx = (py * w + px) * 4;
+  const targetR = data[startIdx], targetG = data[startIdx + 1], targetB = data[startIdx + 2], targetA = data[startIdx + 3];
+
+  const fillR = parseInt(fillColorHex.slice(1, 3), 16);
+  const fillG = parseInt(fillColorHex.slice(3, 5), 16);
+  const fillB = parseInt(fillColorHex.slice(5, 7), 16);
+  const fillA = Math.round(fillOpacity * 255);
+
+  if (Math.abs(targetR - fillR) < 8 && Math.abs(targetG - fillG) < 8 && Math.abs(targetB - fillB) < 8 && Math.abs(targetA - fillA) < 8) return;
+
+  function matches(idx) {
+    return (Math.abs(data[idx] - targetR) + Math.abs(data[idx + 1] - targetG) + Math.abs(data[idx + 2] - targetB) + Math.abs(data[idx + 3] - targetA)) < 55;
+  }
+
+  const outCv = document.createElement('canvas');
+  outCv.width = w; outCv.height = h;
+  const outCtx = outCv.getContext('2d');
+  const outImgData = outCtx.createImageData(w, h);
+  const outData = outImgData.data;
+
+  const queue = [px, py];
+  const visited = new Uint8Array(w * h);
+  visited[py * w + px] = 1;
+
+  while (queue.length > 0) {
+    const curY = queue.pop();
+    const curX = queue.pop();
+    const idx = (curY * w + curX) * 4;
+
+    outData[idx] = fillR;
+    outData[idx + 1] = fillG;
+    outData[idx + 2] = fillB;
+    outData[idx + 3] = fillA;
+
+    const neighbors = [[curX + 1, curY], [curX - 1, curY], [curX, curY + 1], [curX, curY - 1]];
+    for (const [nx, ny] of neighbors) {
+      if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+        const nPos = ny * w + nx;
+        if (!visited[nPos]) {
+          visited[nPos] = 1;
+          if (matches(nPos * 4)) queue.push(nx, ny);
+        }
+      }
+    }
+  }
+
+  outCtx.putImageData(outImgData, 0, 0);
+
+  const fillStroke = {
+    id: 'elem-' + (nextStrokeId++),
+    tool: 'fill',
+    color: fillColorHex,
+    opacity: fillOpacity,
+    points: [{ x: startX, y: startY }],
+    canvasImage: outCv
+  };
+
+  history.push(fillStroke);
+  future = [];
+  inkLayers[activeInk].future = future;
+  render();
+  notice('Zona rellenada');
+}
+
+// Popover de Texto Flotante
+function openTextPopover(worldX, worldY, existingStroke = null) {
+  const pop = $('#textPopover');
+  const r = paper.getBoundingClientRect();
+
+  textOptions.pendingX = worldX;
+  textOptions.pendingY = worldY;
+  textOptions.editingStrokeId = existingStroke ? existingStroke.id : null;
+
+  if (existingStroke) {
+    $('#textInput').value = existingStroke.text || '';
+    $('#textFontFamily').value = existingStroke.fontFamily || 'sans-serif';
+    $('#textFontSize').value = existingStroke.fontSize || 28;
+    textOptions.bold = !!existingStroke.bold;
+    textOptions.italic = !!existingStroke.italic;
+    textOptions.underline = !!existingStroke.underline;
+    if (existingStroke.color) selectColor(existingStroke.color);
+  } else {
+    $('#textInput').value = '';
+  }
+
+  $('#textBoldBtn').classList.toggle('active', textOptions.bold);
+  $('#textItalicBtn').classList.toggle('active', textOptions.italic);
+  $('#textUnderlineBtn').classList.toggle('active', textOptions.underline);
+
+  pop.hidden = false;
+  const scr = worldToScreen(worldX, worldY);
+  const posX = Math.max(10, Math.min(r.width - 330, scr.x));
+  const posY = Math.max(10, Math.min(r.height - 180, scr.y));
+  pop.style.left = posX + 'px';
+  pop.style.top = posY + 'px';
+
+  setTimeout(() => $('#textInput').focus(), 50);
+}
+
+function closeTextPopover() {
+  $('#textPopover').hidden = true;
+  textOptions.editingStrokeId = null;
+}
+
+function commitText() {
+  const content = $('#textInput').value.trim();
+  if (!content) {
+    closeTextPopover();
+    return;
+  }
+
+  const fFamily = $('#textFontFamily').value;
+  const fSize = Number($('#textFontSize').value) || 28;
+
+  if (textOptions.editingStrokeId) {
+    const s = history.find(it => it.id === textOptions.editingStrokeId);
+    if (s) {
+      s.text = content;
+      s.fontFamily = fFamily;
+      s.fontSize = fSize;
+      s.bold = textOptions.bold;
+      s.italic = textOptions.italic;
+      s.underline = textOptions.underline;
+      s.color = color;
+      notice('Texto actualizado');
+    }
+  } else {
+    const newTextStroke = {
+      id: 'elem-' + (nextStrokeId++),
+      tool: 'text',
+      color: color,
+      opacity: inkOpacity,
+      fontFamily: fFamily,
+      fontSize: fSize,
+      bold: textOptions.bold,
+      italic: textOptions.italic,
+      underline: textOptions.underline,
+      text: content,
+      points: [{ x: textOptions.pendingX, y: textOptions.pendingY }]
+    };
+    history.push(newTextStroke);
+    future = [];
+    inkLayers[activeInk].future = future;
+    notice('Texto colocado');
+  }
+
+  closeTextPopover();
+  render();
+}
+
+$('#textBoldBtn').onclick = () => {
+  textOptions.bold = !textOptions.bold;
+  $('#textBoldBtn').classList.toggle('active', textOptions.bold);
+};
+$('#textItalicBtn').onclick = () => {
+  textOptions.italic = !textOptions.italic;
+  $('#textItalicBtn').classList.toggle('active', textOptions.italic);
+};
+$('#textUnderlineBtn').onclick = () => {
+  textOptions.underline = !textOptions.underline;
+  $('#textUnderlineBtn').classList.toggle('active', textOptions.underline);
+};
+$('#textConfirmBtn').onclick = commitText;
+$('#textCancelBtn').onclick = closeTextPopover;
+$('#textInput').onkeydown = e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    commitText();
+  } else if (e.key === 'Escape') {
+    closeTextPopover();
+  }
+};
+
+function flush() {
+  frame = 0;
+  if (active && ['eraser','blend'].includes(active.tool)) render();
+  else drawPreview();
+}
+
+function appendPoint(e) {
+  const p = point(e);
+  if (['rect','circle','ellipse','arrow','cloud','profile'].includes(active.tool)) {
+    active.points[1] = p;
+  } else if (active.tool === 'curve') {
+    if (active.curveStep === 2) {
+      active.points[2] = p;
+    } else {
+      active.points[1] = p;
+      active.points[2] = { x: (active.points[0].x + p.x) / 2, y: (active.points[0].y + p.y) / 2 };
+    }
+  } else if (active.guide) {
+    active.points[1] = projectToGuide(p, active.guide);
+  } else if (active.line) {
+    active.points[1] = snapPoint(p);
+  } else {
+    active.points.push(p);
+  }
+}
+
+function finish() {
+  if (!active) return;
+  cancelAnimationFrame(frame);
+  frame = 0;
+  const s = active;
+
+  if (s.tool === 'pen' && autoStraight && !s.guide && isNearlyStraight(s.points)) {
+    s.points = [{ ...s.points[0], p: 0 }, { ...s.points.at(-1), p: 0 }];
+    notice('Línea enderezada');
+  }
+
+  ensureStrokeId(s);
+  history.push(s);
+  active = null;
+  future = [];
+  inkLayers[activeInk].future = future;
+  render();
+}
+
+function getPointersDistance(p1, p2) {
+  return Math.hypot(p2.clientX - p1.clientX, p2.clientY - p1.clientY);
+}
+
+function getPointersCenter(p1, p2) {
+  return {
+    clientX: (p1.clientX + p2.clientX) / 2,
+    clientY: (p1.clientY + p2.clientY) / 2
+  };
+}
+
+let pressureProbe = null;
+const pressureBrushes = ['pen','graphite','marker','highlighter','watercolor'];
+function pressureMessage(probe, finished=false) {
+  if(probe.type !== 'pen') return 'Recibido como '+({mouse:'ratón',touch:'dedo'}[probe.type]||probe.type)+' · sin presión de lápiz';
+  const range=Math.round(probe.min*100)+'–'+Math.round(probe.max*100)+'%';
+  if(!pressureEnabled) return 'Lápiz · presión desactivada';
+  if(!pressureBrushes.includes(tool)) return 'Lápiz '+Math.round(probe.last*100)+'% · usa Bolígrafo o Grafito';
+  if(finished && probe.max-probe.min < .01) return 'Lápiz · valor constante '+Math.round(probe.last*100)+'%; prueba suave y fuerte';
+  return 'Lápiz '+Math.round(probe.last*100)+'% · rango '+range;
+}
+function observePressure(e,finished=false) {
+  if(e.type==='pointerdown') pressureProbe={id:e.pointerId,type:e.pointerType,min:1,max:0,last:0};
+  if(!pressureProbe || pressureProbe.id!==e.pointerId) return;
+  if(!finished && e.buttons) {
+    const samples=typeof e.getCoalescedEvents==='function'?e.getCoalescedEvents():[];
+    for(const sample of samples.length?samples:[e]) {
+      const value=Number.isFinite(sample.pressure)?Math.max(0,Math.min(1,sample.pressure)):0;
+      pressureProbe.last=value;pressureProbe.min=Math.min(pressureProbe.min,value);pressureProbe.max=Math.max(pressureProbe.max,value);
+    }
+  }
+  $('#pressureMeter').value=finished?0:pressureProbe.last;
+  $('#pressureReadout').textContent=pressureMessage(pressureProbe,finished);
+}
+ink.addEventListener('pointerdown', e=>observePressure(e));
+ink.addEventListener('pointermove', e=>observePressure(e));
+ink.addEventListener('pointerup', e=>observePressure(e,true));
+ink.addEventListener('pointercancel', e=>observePressure(e,true));
+let writingPen = null;
+ink.addEventListener('pointerdown', e => {
+  if (e.pointerType === 'touch' && writingPen !== null) { e.preventDefault(); e.stopImmediatePropagation(); return; }
+  if (e.pointerType === 'pen') {
+    writingPen = e.pointerId;
+    activeTouchPointers.clear();
+    isPinching = false;
+  }
+}, true);
+for (const name of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  ink.addEventListener(name, e => { if (e.pointerId === writingPen) writingPen = null; }, true);
+}
+ink.addEventListener('pointerdown', e => {
+  if(tool==='laser'){e.preventDefault();ink.setPointerCapture(e.pointerId);showLaser(e);return;}
+  if((tool==='eraser'||(e.pointerType==='pen'&&(e.buttons&32)))&&eraserByObject&&e.button===0){
+    e.preventDefault();ink.setPointerCapture(e.pointerId);objectEraseGesture={pointer:e.pointerId,entry:null};eraseObjectAt(e);return;
+  }
+  if (e.pointerType === 'touch') activeTouchPointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+
+  // Detección de Doble Toque (Double Tap) para seleccionar o editar texto
+  const now = Date.now();
+  const timeSinceLast = now - lastTapTime;
+  const distSinceLast = Math.hypot(e.clientX - lastTapCoords.x, e.clientY - lastTapCoords.y);
+
+  if (timeSinceLast < 320 && distSinceLast < 35 && activeTouchPointers.size === 1) {
+    const pt = point(e);
+    const rev = [...currentStrokes()].reverse();
+    const hit = rev.find(s => hitTestStroke(s, pt));
+    if (hit) {
+      if (hit.tool === 'text') {
+        openTextPopover(hit.points[0].x, hit.points[0].y, hit);
+        lastTapTime = 0;
+        return;
+      }
+      selectedStrokes = [hit];
+      selectedStroke = hit;
+      setTool('select');
+      render();
+      notice('🎯 Elemento seleccionado');
+      lastTapTime = 0;
+      return;
+    } else if (selectedStrokes.length > 0) {
+      selectedStrokes = [];
+      selectedStroke = null;
+      render();
+      notice('Deseleccionado');
+      lastTapTime = 0;
+      return;
+    }
+  }
+  lastTapTime = now;
+  lastTapCoords = { x: e.clientX, y: e.clientY };
+
+  if (activeTouchPointers.size >= 2) {
+    if (active) { active = null; render(); }
+    isPinching = true;
+    isPanning = false;
+
+    const [p1, p2] = Array.from(activeTouchPointers.values()).slice(0, 2);
+    pinchStartDist = getPointersDistance(p1, p2);
+    pinchStartZoom = zoom;
+    pinchStartPan = { x: panX, y: panY };
+
+    const center = getPointersCenter(p1, p2);
+    const r = ink.getBoundingClientRect();
+    pinchStartCenter = { x: center.clientX - r.left, y: center.clientY - r.top };
+
+    ink.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  if (calibrationSamples) {
+    recordCalibration(e);
+    return;
+  }
+
+  if (tool === 'pan' || spacePressed || e.button === 1) {
+    isPanning = true;
+    panStart = { x: e.clientX - panX, y: e.clientY - panY };
+    ink.setPointerCapture(e.pointerId);
+    ink.style.cursor = 'grabbing';
+    return;
+  }
+
+  if (pickerMode) {
+    const pt = point(e);
+    const temp = document.createElement('canvas');
+    temp.width = sheetWidth; temp.height = sheetHeight;
+    const tC = temp.getContext('2d');
+    drawPaperSheet(tC);
+    renderBgLayers(tC);
+    const px = tC.getImageData(Math.round(pt.x), Math.round(pt.y), 1, 1).data;
+    selectColor('#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
+    pickerMode = false;
+    $('#picker').setAttribute('aria-pressed', 'false');
+    setTool('pen');
+    notice('Color tomado: ' + color);
+    return;
+  }
+
+  const pt = point(e);
+
+  // Manejo de la herramienta Selección (Múltiple y Simple)
+  if (tool === 'select') {
+    // 1. Manilla de rotación grupal
+    if (selectedStrokes.length > 0 && hitTestGroupRotationHandle(selectedStrokes, pt)) {
+      const ctr = getGroupCenter(selectedStrokes);
+      rotationDrag = {
+        pointer: e.pointerId,
+        center: ctr,
+        startMouseAngle: Math.atan2(pt.y - ctr.y, pt.x - ctr.x),
+        items: selectedStrokes.map(s => ({
+          stroke: s,
+          origAngle: s.angle || 0,
+          origCenter: getStrokeCenter(s)
+        }))
+      };
+      ink.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    // 2. Clic sobre algún elemento ya seleccionado para mover todo el grupo
+    const hitAlreadySelected = selectedStrokes.find(s => hitTestStroke(s, pt));
+    if (hitAlreadySelected) {
+      dragMove = {
+        pointer: e.pointerId,
+        startX: pt.x,
+        startY: pt.y,
+        items: selectedStrokes.map(s => ({
+          stroke: s,
+          origPoints: s.points.map(p => ({ ...p }))
+        }))
+      };
+      ink.setPointerCapture(e.pointerId);
+      return;
+    }
+
+    // 3. Clic sobre un elemento nuevo
+    const rev = [...currentStrokes()].reverse();
+    const hit = rev.find(s => hitTestStroke(s, pt));
+    if (hit) {
+      if (e.shiftKey) {
+        // Toggle individual en multiselección con Shift
+        const idx = selectedStrokes.indexOf(hit);
+        if (idx >= 0) selectedStrokes.splice(idx, 1);
+        else selectedStrokes.push(hit);
+      } else {
+        selectedStrokes = [hit];
+      }
+      selectedStroke = selectedStrokes[0] || null;
+      dragMove = {
+        pointer: e.pointerId,
+        startX: pt.x,
+        startY: pt.y,
+        items: selectedStrokes.map(s => ({
+          stroke: s,
+          origPoints: s.points.map(p => ({ ...p }))
+        }))
+      };
+      ink.setPointerCapture(e.pointerId);
+      render();
+      return;
+    }
+
+    // 4. Clic en espacio vacío: Iniciar marquesina de selección múltiple
+    if (!e.shiftKey) selectedStrokes = [];
+    selectedStroke = null;
+    marquee = { pointer: e.pointerId, startX: pt.x, startY: pt.y, currentX: pt.x, currentY: pt.y };
+    ink.setPointerCapture(e.pointerId);
+    render();
+    return;
+  }
+
+  if (tool === 'bucket') {
+    floodFill(pt.x, pt.y, color, inkOpacity);
+    return;
+  }
+
+  if (tool === 'text') {
+    openTextPopover(pt.x, pt.y);
+    return;
+  }
+
+  if (active || rulerDrag || e.button !== 0) return;
+  e.preventDefault();
+  ink.setPointerCapture(e.pointerId);
+
+  const activeTool = (e.pointerType === 'pen' && (e.buttons & 32)) ? 'eraser' : tool;
+  const brushSize = activeTool === 'eraser' ? eraserDiameter : activeTool === 'blend' ? Math.max(24, size * 8) : size;
+
+  active = {
+    id: 'elem-' + (nextStrokeId++),
+    tool: activeTool,
+    preset: profilePreset, hatch: profileHatch, parallelCount,
+    pressure: pressureEnabled && e.pointerType === 'pen' && ['pen','graphite','marker','highlighter','watercolor'].includes(activeTool),
+    sensitivity: pressureSensitivity,
+    color,
+    size: brushSize,
+    opacity: ['eraser','blend'].includes(activeTool) ? 1 : inkOpacity,
+    points: [pt],
+    pointer: e.pointerId,
+    line: tool === 'line',
+    radius: activeTool === 'rect' ? rectRadius : 0,
+    curveStep: 1
+  };
+
+  if (['rect','circle','ellipse','arrow','cloud','profile'].includes(active.tool)) {
+    active.points.push({ ...pt });
+  }
+
+  if (active.tool === 'curve') {
+    active.points.push({ ...pt });
+    active.points.push({ ...pt });
+  }
+
+  if (['pen','vector'].includes(active.tool) || active.line) {
+    active.guide = rulerGuide(active.points[0]);
+    if (active.guide) active.points[0] = projectToGuide(active.points[0], active.guide);
+  }
+
+  if (active.line && !active.guide) {
+    active.points.push(snapPoint(active.points[0]));
+  }
+
+  flush();
+});
+
+ink.addEventListener('pointermove', e => {
+  if(tool==='laser'){e.preventDefault();showLaser(e);return;}
+  if(objectEraseGesture?.pointer===e.pointerId){e.preventDefault();eraseObjectAt(e);return;}
+  if (activeTouchPointers.has(e.pointerId)) {
+    activeTouchPointers.set(e.pointerId, { clientX: e.clientX, clientY: e.clientY });
+  }
+
+  if (isPinching && activeTouchPointers.size >= 2) {
+    e.preventDefault();
+    const [p1, p2] = Array.from(activeTouchPointers.values()).slice(0, 2);
+    const curDist = getPointersDistance(p1, p2);
+    const curCenter = getPointersCenter(p1, p2);
+    const r = ink.getBoundingClientRect();
+    const curCenterX = curCenter.clientX - r.left;
+    const curCenterY = curCenter.clientY - r.top;
+
+    if (pinchStartDist > 0) {
+      const distRatio = curDist / pinchStartDist;
+      const isPureParallelPan = Math.abs(distRatio - 1.0) < 0.08;
+
+      let targetZoom = pinchStartZoom;
+      if (!isPureParallelPan) {
+        targetZoom = Math.max(0.18, Math.min(5.0, pinchStartZoom * distRatio));
+      }
+
+      panX = curCenterX - (pinchStartCenter.x - pinchStartPan.x) * (targetZoom / pinchStartZoom);
+      panY = curCenterY - (pinchStartCenter.y - pinchStartPan.y) * (targetZoom / pinchStartZoom);
+      zoom = targetZoom;
+
+      render();
+    }
+    return;
+  }
+
+  if (isPanning) {
+    panX = e.clientX - panStart.x;
+    panY = e.clientY - panStart.y;
+    render();
+    return;
+  }
+
+  // Rotación múltiple
+  if (tool === 'select' && rotationDrag && e.pointerId === rotationDrag.pointer) {
+    e.preventDefault();
+    const pt = point(e);
+    const curAngle = Math.atan2(pt.y - rotationDrag.center.y, pt.x - rotationDrag.center.x);
+    let delta = curAngle - rotationDrag.startMouseAngle;
+    if (e.shiftKey) {
+      const snapRad = 15 * Math.PI / 180;
+      delta = Math.round(delta / snapRad) * snapRad;
+    }
+    for (const item of rotationDrag.items) {
+      item.stroke.angle = item.origAngle + delta;
+    }
+    render();
+    return;
+  }
+
+  // Desplazamiento múltiple
+  if (tool === 'select' && dragMove && e.pointerId === dragMove.pointer) {
+    e.preventDefault();
+    const pt = point(e);
+    const dx = pt.x - dragMove.startX;
+    const dy = pt.y - dragMove.startY;
+    for (const item of dragMove.items) {
+      item.stroke.points = item.origPoints.map(p => ({
+        ...p,
+        x: p.x + dx,
+        y: p.y + dy
+      }));
+    }
+    render();
+    return;
+  }
+
+  // Marquesina de selección múltiple
+  if (tool === 'select' && marquee && e.pointerId === marquee.pointer) {
+    e.preventDefault();
+    const pt = point(e);
+    marquee.currentX = pt.x;
+    marquee.currentY = pt.y;
+
+    const minX = Math.min(marquee.startX, marquee.currentX);
+    const maxX = Math.max(marquee.startX, marquee.currentX);
+    const minY = Math.min(marquee.startY, marquee.currentY);
+    const maxY = Math.max(marquee.startY, marquee.currentY);
+
+    selectedStrokes = currentStrokes().filter(s => {
+      const b = getStrokeBounds(s, false);
+      if (!b) return false;
+      return b.minX < maxX && b.maxX > minX && b.minY < maxY && b.maxY > minY;
+    });
+    selectedStroke = selectedStrokes[0] || null;
+    drawPreview();
+    updateUI();
+    return;
+  }
+
+  if (!active || e.pointerId !== active.pointer) return;
+  e.preventDefault();
+  const samples = ['pen','graphite','marker','highlighter','watercolor'].includes(active.tool) && typeof e.getCoalescedEvents === 'function' ? e.getCoalescedEvents() : [];
+  for (const sample of samples.length ? samples : [e]) appendPoint(sample);
+  if (!frame) frame = requestAnimationFrame(flush);
+});
+
+function stopPointerInteraction(e) {
+  if(tool==='laser'){$('#laserDot').hidden=true;return;}
+  if(objectEraseGesture?.pointer===e.pointerId){objectEraseGesture=null;render();return;}
+  activeTouchPointers.delete(e.pointerId);
+
+  if (isPinching) {
+    if (activeTouchPointers.size < 2) {
+      isPinching = false;
+      render();
+    }
+    return;
+  }
+
+  if (isPanning) {
+    isPanning = false;
+    ink.style.cursor = (tool === 'pan' || spacePressed) ? 'grab' : 'crosshair';
+    return;
+  }
+
+  if (tool === 'select' && marquee && e.pointerId === marquee.pointer) {
+    marquee = null;
+    render();
+    if (selectedStrokes.length > 0) {
+      notice(`${selectedStrokes.length} elemento(s) seleccionado(s)`);
+    }
+    return;
+  }
+
+  if (tool === 'select' && rotationDrag && e.pointerId === rotationDrag.pointer) {
+    rotationDrag = null;
+    future = [];
+    inkLayers[activeInk].future = future;
+    notice('Rotación aplicada');
+    render();
+    return;
+  }
+
+  if (tool === 'select' && dragMove && e.pointerId === dragMove.pointer) {
+    dragMove = null;
+    future = [];
+    inkLayers[activeInk].future = future;
+    notice('Elementos reubicados');
+    render();
+    return;
+  }
+
+  if (active?.pointer === e.pointerId) {
+    // Si es herramienta curva, dar opción de arquear antes de finalizar
+    if (active.tool === 'curve' && active.curveStep === 1) {
+      active.curveStep = 2;
+      notice('Arrastra para arquear la curva');
+      return;
+    }
+    appendPoint(e);
+    finish();
+  }
+}
+
+ink.addEventListener('pointerup', stopPointerInteraction);
+ink.addEventListener('pointercancel', stopPointerInteraction);
+ink.addEventListener('lostpointercapture', stopPointerInteraction);
+
+// Toggle de Modo Celular
+const toggleMobileModeBtn = $('#toggleMobileModeBtn');
+function setMobileMode(activeState) {
+  mobileModeEnabled = activeState;
+  document.body.classList.toggle('mobile-mode', mobileModeEnabled);
+  toggleMobileModeBtn.classList.toggle('active-mode', mobileModeEnabled);
+
+  if (mobileModeEnabled) {
+    resetView();
+    notice('📱 Modo Celular activado: Pellizca con 2 dedos para zoom y arrastra para mover.');
+  } else {
+    notice('Modo Celular desactivado.');
+  }
+}
+
+toggleMobileModeBtn.onclick = () => {
+  setMobileMode(!mobileModeEnabled);
+};
+
+// Detección automática al cargar en pantallas pequeñas
+if (window.innerWidth <= 1024 || matchMedia('(pointer: coarse)').matches) {
+  setMobileMode(true);
+}
+
+const layersPanel = $('#layersPanel');
+const layersHead = $('#layersHead');
+let panelDrag = null;
+
+layersHead.addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  e.preventDefault();
+  layersHead.setPointerCapture(e.pointerId);
+  const rect = layersPanel.getBoundingClientRect();
+  panelDrag = {
+    pointer: e.pointerId,
+    offsetX: e.clientX - rect.left,
+    offsetY: e.clientY - rect.top
+  };
+});
+
+layersHead.addEventListener('pointermove', e => {
+  if (!panelDrag || panelDrag.pointer !== e.pointerId) return;
+  e.preventDefault();
+  const parentRect = paper.getBoundingClientRect();
+  let newX = e.clientX - parentRect.left - panelDrag.offsetX;
+  let newY = e.clientY - parentRect.top - panelDrag.offsetY;
+
+  newX = Math.max(5, Math.min(parentRect.width - layersPanel.offsetWidth - 5, newX));
+  newY = Math.max(5, Math.min(parentRect.height - 45, newY));
+
+  layersPanel.style.left = newX + 'px';
+  layersPanel.style.top = newY + 'px';
+  layersPanel.style.right = 'auto';
+});
+
+function stopPanelDrag(e) { if (panelDrag?.pointer === e.pointerId) panelDrag = null; }
+layersHead.addEventListener('pointerup', stopPanelDrag);
+layersHead.addEventListener('pointercancel', stopPanelDrag);
+
+$('#collapseLayersBtn').onclick = () => {
+  const body = $('#layersBody');
+  const collapsed = body.classList.toggle('collapsed');
+  $('#collapseLayersBtn').textContent = collapsed ? '▸' : '▾';
+};
+
+$('#closeLayersBtn').onclick = () => { layersPanel.style.display = 'none'; };
+$('#toggleLayersBtn').onclick = () => {
+  layersPanel.style.display = layersPanel.style.display === 'none' ? 'flex' : 'none';
+};
+
+function renameLayer(layer, row) {
+  const label=row.querySelector('.layer-name'),input=document.createElement('input');
+  input.type='text';input.value=layer.name;input.maxLength=120;input.setAttribute('aria-label','Nombre de la capa');input.style.cssText='width:100%;min-width:0;box-sizing:border-box';
+  label.replaceChildren(input);input.onclick=e=>e.stopPropagation();let done=false;
+  const save=()=>{if(done)return;done=true;if(input.value.trim())layer.name=input.value.trim();renderLayerUI();render();};
+  input.onblur=save;input.onkeydown=e=>{e.stopPropagation();if(e.key==='Enter'){e.preventDefault();save();}else if(e.key==='Escape'){done=true;renderLayerUI();}};
+  input.focus();input.select();
+}
+
+function renderLayerUI() {
+  const box = $('#layerList');
+  if (!box) return;
+  box.innerHTML = '';
+
+  // Capas de Tinta
+  inkLayers.forEach((il, i) => {
+    const isCurrentActive = (activeInk === i);
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (isCurrentActive ? ' active-ink' : '');
+    row.innerHTML = `
+      <button class="layer-eye" title="Visibilidad">${il.visible === false ? '○' : '◉'}</button>
+      <span class="layer-name" title="Pulsar para activar esta capa">
+        ✎ ${String(il.name).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#39;"}[c]||c))}
+        ${isCurrentActive ? '<span class="badge-active-layer">ACTIVA</span>' : ''}
+      </span>
+      <button class="layer-order-btn layer-rename" title="Renombrar capa" aria-label="Renombrar capa">✎</button><button class="layer-order-btn layer-up" title="Subir orden" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button class="layer-order-btn layer-down" title="Bajar orden" ${i === inkLayers.length - 1 ? 'disabled' : ''}>↓</button>
+      <button class="layer-remove" title="Eliminar capa" ${inkLayers.length === 1 ? 'disabled style="opacity:0.3"' : ''}>×</button>
+    `;
+
+    row.querySelector('.layer-eye').onclick = (e) => {
+      e.stopPropagation();
+      il.visible = (il.visible === false);
+      renderLayerUI();
+      render();
+    };
+
+    row.querySelector('.layer-rename').onclick = e => { e.stopPropagation(); renameLayer(il,row); };
+    row.querySelector('.layer-name').onclick = () => {
+      activeInk = i;
+      history = inkLayers[i].strokes;
+      future = inkLayers[i].future;
+      selectedStroke = null;
+      renderLayerUI();
+      render();
+      notice(`Dibujando ahora en: ${String(il.name).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#39;"}[c]||c))}`);
+    };
+
+    row.querySelector('.layer-up').onclick = (e) => {
+      e.stopPropagation();
+      if (i > 0) {
+        [inkLayers[i - 1], inkLayers[i]] = [inkLayers[i], inkLayers[i - 1]];
+        if (activeInk === i) activeInk = i - 1;
+        else if (activeInk === i - 1) activeInk = i;
+        history = inkLayers[activeInk].strokes;
+        future = inkLayers[activeInk].future;
+        renderLayerUI();
+        render();
+      }
+    };
+
+    row.querySelector('.layer-down').onclick = (e) => {
+      e.stopPropagation();
+      if (i < inkLayers.length - 1) {
+        [inkLayers[i + 1], inkLayers[i]] = [inkLayers[i], inkLayers[i + 1]];
+        if (activeInk === i) activeInk = i + 1;
+        else if (activeInk === i + 1) activeInk = i;
+        history = inkLayers[activeInk].strokes;
+        future = inkLayers[activeInk].future;
+        renderLayerUI();
+        render();
+      }
+    };
+
+    row.querySelector('.layer-remove').onclick = (e) => {
+      e.stopPropagation();
+      if (inkLayers.length === 1) return;
+      inkLayers.splice(i, 1);
+      if (activeInk >= inkLayers.length) activeInk = inkLayers.length - 1;
+      history = inkLayers[activeInk].strokes;
+      future = inkLayers[activeInk].future;
+      renderLayerUI();
+      render();
+    };
+
+    box.append(row);
+    const opacityControl = document.createElement('div');
+    opacityControl.className = 'layer-opacity';
+    const percent = Math.round((il.opacity ?? 1) * 100);
+    opacityControl.innerHTML = `
+      <span>Opacidad</span>
+      <input type="range" min="0" max="100" step="1" value="${percent}" aria-label="Opacidad de la capa de tinta ${i + 1}">
+      <b>${percent}%</b>
+    `;
+    const opacityInput = opacityControl.querySelector('input');
+    opacityInput.oninput = () => {
+      il.opacity = Number(opacityInput.value) / 100;
+      opacityControl.querySelector('b').textContent = opacityInput.value + '%';
+      render();
+    };
+    box.append(opacityControl);
+  });
+
+  // Capas de Fondo / Archivos
+  layers.forEach((l, i) => {
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (selectedBgLayer === i ? ' selected' : '');
+    row.innerHTML = `
+      <button class="layer-eye" title="Visibilidad">${l.visible ? '◉' : '○'}</button>
+      <span class="layer-name">▧ ${String(l.name).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","\'":"&#39;"}[c]||c))}</span>
+      <button class="layer-order-btn layer-rename" title="Renombrar capa" aria-label="Renombrar capa">✎</button><button class="layer-order-btn bg-up" title="Subir fondo" ${i === 0 ? 'disabled' : ''}>↑</button>
+      <button class="layer-order-btn bg-down" title="Bajar fondo" ${i === layers.length - 1 ? 'disabled' : ''}>↓</button>
+      <button class="layer-remove" title="Eliminar fondo">×</button>
+    `;
+
+    row.querySelector('.layer-eye').onclick = (e) => {
+      e.stopPropagation();
+      l.visible = !l.visible;
+      if(l.visible && l.pdf) loadPDFLayer(l);
+      renderLayerUI();
+      render();
+    };
+    row.querySelector('.layer-rename').onclick = e => { e.stopPropagation(); renameLayer(l,row); };
+    row.querySelector('.layer-name').onclick = () => {
+      selectedBgLayer = i;
+      renderLayerUI();
+    };
+    row.querySelector('.bg-up').onclick = (e) => {
+      e.stopPropagation();
+      if (i > 0) {
+        [layers[i - 1], layers[i]] = [layers[i], layers[i - 1]];
+        selectedBgLayer = i - 1;
+        renderLayerUI();
+        render();
+      }
+    };
+    row.querySelector('.bg-down').onclick = (e) => {
+      e.stopPropagation();
+      if (i < layers.length - 1) {
+        [layers[i + 1], layers[i]] = [layers[i], layers[i + 1]];
+        selectedBgLayer = i + 1;
+        renderLayerUI();
+        render();
+      }
+    };
+    row.querySelector('.layer-remove').onclick = (e) => {
+      e.stopPropagation();
+      layers.splice(i, 1);
+      if (selectedBgLayer >= layers.length) selectedBgLayer = layers.length - 1;
+      renderLayerUI();
+      render();
+    };
+    box.append(row);
+
+    if (selectedBgLayer === i) {
+      // Controles expandidos: Opacidad y Escala de imagen insertada
+      const lScalePercent = Math.round((l.scale || 1) * 100);
+      const op = document.createElement('div');
+      op.className = 'layer-opacity';
+      op.style.flexDirection = 'column';
+      op.style.alignItems = 'stretch';
+      op.style.gap = '4px';
+      op.innerHTML = `
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>Opacidad</span>
+          <input type="range" class="inp-layer-op" min="0" max="100" value="${Math.round(l.opacity * 100)}">
+          <b class="lbl-layer-op">${Math.round(l.opacity * 100)}%</b>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span>Escala</span>
+          <input type="range" class="inp-layer-scale" min="10" max="300" step="5" value="${lScalePercent}">
+          <b class="lbl-layer-scale">${lScalePercent}%</b>
+        </div>
+      `;
+      const opInput = op.querySelector('.inp-layer-op');
+      opInput.oninput = () => {
+        l.opacity = Number(opInput.value) / 100;
+        op.querySelector('.lbl-layer-op').textContent = opInput.value + '%';
+        render();
+      };
+
+      const scInput = op.querySelector('.inp-layer-scale');
+      scInput.oninput = () => {
+        l.scale = Number(scInput.value) / 100;
+        op.querySelector('.lbl-layer-scale').textContent = scInput.value + '%';
+        render();
+      };
+
+      box.append(op);
+    }
+  });
+
+  updateUI();
+}
+
+$('#newInkLayerBtn').onclick = () => {
+  inkLayers.push({
+    name: 'Tinta ' + (inkLayers.length + 1),
+    strokes: [],
+    future: [],
+    opacity: 1,
+    visible: true
+  });
+  activeInk = inkLayers.length - 1;
+  history = inkLayers[activeInk].strokes;
+  future = inkLayers[activeInk].future;
+  selectedStroke = null;
+  renderLayerUI();
+  render();
+  notice(`Capa creada: ${inkLayers[activeInk].name}`);
+};
+
+$('#fileInput').onchange = e => {
+  for (const f of e.target.files) importMedia(f);
+  e.target.value = '';
+};
+
+async function loadPDFLayer(layer) {
+  if(layer.image || !layer.pdf) return;
+  if(layer.loading) return layer.loading;
+  layer.loading=(async()=>{
+    try {
+      notice('Cargando página '+layer.pageNumber+'…');
+      const page=await layer.pdf.getPage(layer.pageNumber),native=page.getViewport({scale:1});
+      const scale=Math.min(4,Math.sqrt(8000000/(native.width*native.height)),4096/Math.max(native.width,native.height));
+      const vp=page.getViewport({scale}),cv=document.createElement('canvas');
+      cv.width=Math.round(vp.width);cv.height=Math.round(vp.height);
+      await page.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+      layer.image=cv;
+      page.cleanup();
+      // Mantener hasta tres páginas ocultas en memoria además de las visibles.
+      const hidden=layers.filter(l=>l.pdf&&l!==layer&&!l.visible&&l.image);
+      while(hidden.length>3) hidden.shift().image=null;
+      render();
+    } catch(error) { layer.visible=false; notice('No se pudo cargar la página '+layer.pageNumber+'. Puedes reintentar.'); }
+    finally { layer.loading=null; renderLayerUI(); }
+  })();
+  return layer.loading;
+}
+function importMedia(file) {
+  const reader = new FileReader();
+  if (file.type === 'application/pdf' || /\.pdf$/i.test(file.name)) {
+    reader.onload = async () => {
+      try {
+        if (!window.pdfjsLib) throw Error('PDF.js unavailable');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const originalPDF = reader.result.slice(0);
+        const pdf = await pdfjsLib.getDocument({ data: reader.result }).promise;
+        sessionPDFSources.set(pdf, originalPDF);
+        const firstIndex=layers.length;
+        for(let pageNumber=1;pageNumber<=pdf.numPages;pageNumber++) {
+          layers.push({name:file.name+' · Página '+pageNumber+'/'+pdf.numPages, pdf, pageNumber,
+            image:null, opacity:1, scale:1, offsetX:0, offsetY:0, visible:pageNumber===1});
+        }
+        selectedBgLayer=firstIndex;
+        renderLayerUI();
+        await loadPDFLayer(layers[firstIndex]);
+        notice('PDF importado: '+pdf.numPages+' páginas como capas. Usa ◉ para mostrarlas.');
+      } catch (err) {
+        notice('Error al leer el PDF.');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.onload = () => {
+      const im = new Image();
+      im.onload = () => {
+        layers.push({ name: file.name, image: im, opacity: 0.7, scale: 1, offsetX: 0, offsetY: 0, visible: true });
+        selectedBgLayer = layers.length - 1;
+        renderLayerUI();
+        render();
+        notice(`Foto original: ${im.naturalWidth} × ${im.naturalHeight} px. Ajustada completa a la hoja.`);
+      };
+      im.onerror = () => notice('No se pudo leer la imagen. Usa JPG, PNG o WebP; exporta HEIC como JPG.');
+      im.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+}
+
+function setTool(t) {
+  finish();objectEraseGesture=null;$('#laserDot').hidden=true;
+  tool = t;
+  lineMode = t === 'line';
+  const toolButtons = {
+    laser:'laserTool',profile:'profileTool',pan: 'toolPan', select: 'toolSelect', pen: 'pen', graphite: 'graphite', marker: 'marker',
+    highlighter: 'highlighter', watercolor: 'watercolor', eraser: 'eraser',
+    blend: 'blend', vector: 'vectorPen', bucket: 'bucket', text: 'textTool',
+    line: 'lineTool', curve: 'curveTool', rect: 'rectTool', circle: 'circleTool', ellipse: 'ellipseTool',
+    arrow: 'arrowTool', cloud: 'cloudTool'
+  };
+
+  for (const [name, id] of Object.entries(toolButtons)) {
+    const el = $('#' + id);
+    if (el) el.setAttribute('aria-pressed', t === name);
+  }
+
+  if (t !== 'select') {
+    selectedStrokes = [];
+    selectedStroke = null;
+  }
+
+  const descriptions = {
+    laser:'Puntero láser · no deja marcas ni se exporta',profile:'Figura · arrastra dos esquinas; usa Selección para mover o girar',
+    pan: 'Mano / Desplazar · Arrastra para mover el lienzo infinito',
+    select: 'Modo Selección · Haz clic, arrastra un recuadro o usa Shift para elegir varios',
+    pen: 'Listo para escribir',
+    graphite: 'Lápiz de grafito',
+    marker: 'Marcador semitransparente',
+    highlighter: 'Resaltador ancho',
+    watercolor: 'Acuarela suave',
+    eraser: eraserByObject?'Goma por objetos · capa de tinta activa':'Borrador de área',
+    blend: 'Mezclador suave',
+    vector: 'Pluma vectorial suavizada',
+    bucket: 'Tarro de pintura · Rellena formas cerradas',
+    text: 'Herramienta Texto · Pulsa en el papel para escribir (o doble clic para editar)',
+    line: 'Línea recta (L)',
+    curve: 'Curva interactiva (U) · Arrastra y arquea',
+    rect: 'Rectángulo · Arrastra dos esquinas',
+    circle: 'Círculo perfecto',
+    ellipse: 'Elipse perfecta',
+    arrow: 'Flecha conector',
+    cloud: 'Nube de revisión'
+  };
+  $('#status').textContent = descriptions[t] || 'Listo';
+  drawPreview();
+  updateUI();
+}
+
+function selectColor(nextHex) {
+  color = nextHex;
+  $('#inkColorCustom').value = nextHex;
+  document.querySelectorAll('[data-color]').forEach(x => {
+    x.setAttribute('aria-pressed', x.dataset.color.toLowerCase() === color.toLowerCase());
+  });
+  if (selectedStrokes.length > 0) {
+    selectedStrokes.forEach(s => s.color = nextHex);
+    render();
+  }
+}
+
+function setPattern(pat) {
+  paperPattern = pat;
+  document.querySelectorAll('[data-pattern]').forEach(b => b.setAttribute('aria-pressed', b.dataset.pattern === pat));
+  const pName = SHEET_PRESETS[currentSheetPreset].name;
+  $('#paperName').textContent = `${({ grid: 'CUADRICULADO', lines: 'RAYADO', plain: 'LISO' }[pat])} · ${paperColorName} (${pName})`;
+  render();
+}
+
+function setBackground(name) {
+  const colors = { white: '#fffdf8', black: '#111513', gray: '#d8d9d5', brown: '#e3c9a8' };
+  paperColor = colors[name] || '#fffdf8';
+  paperColorName = { white: 'BLANCO', black: 'NEGRO', gray: 'GRIS', brown: 'MARRÓN' }[name] || 'BLANCO';
+  document.querySelectorAll('[data-bg]').forEach(b => b.setAttribute('aria-pressed', b.dataset.bg === name));
+  if (color === '#292e35' || color === '#f4f2e9') {
+    selectColor(isDark(paperColor) ? '#f4f2e9' : '#292e35');
+  }
+  const pName = SHEET_PRESETS[currentSheetPreset].name;
+  $('#paperName').textContent = `${({ grid: 'CUADRICULADO', lines: 'RAYADO', plain: 'LISO' }[paperPattern])} · ${paperColorName} (${pName})`;
+  render();
+}
+
+$('#toolPan').onclick = () => setTool('pan');
+$('#toolSelect').onclick = () => setTool('select');
+
+// Acción de Copiar Rápido desde la barra principal (soporte múltiple)
+const toolCopyQuickBtn = $('#toolCopyQuick');
+if (toolCopyQuickBtn) {
+  toolCopyQuickBtn.onclick = () => {
+    if (selectedStrokes.length > 0) {
+      const newStrokes = selectedStrokes.map(s => {
+        const dup = {
+          ...s,
+          id: 'elem-' + (nextStrokeId++),
+          points: s.points.map(p => ({ ...p, x: p.x + 25, y: p.y + 25 }))
+        };
+        if (dup.tool === 'fill' && dup.canvasImage) {
+          const cvCopy = document.createElement('canvas');
+          cvCopy.width = dup.canvasImage.width;
+          cvCopy.height = dup.canvasImage.height;
+          cvCopy.getContext('2d').drawImage(dup.canvasImage, 25, 25);
+          dup.canvasImage = cvCopy;
+        }
+        return dup;
+      });
+      newStrokes.forEach(s => history.push(s));
+      future = [];
+      inkLayers[activeInk].future = future;
+      selectedStrokes = newStrokes;
+      selectedStroke = newStrokes[0];
+      render();
+      notice(`📋 ${newStrokes.length} elemento(s) copiado(s) (+25px)`);
+    } else {
+      setTool('select');
+      notice('Selecciona uno o más elementos (o haz doble toque) para copiar.');
+    }
+  };
+}
+
+function mirrorGroupStrokes(strokes, axis = 'h', makeCopy = false) {
+  if (!strokes || !strokes.length) return;
+  const ctr = getGroupCenter(strokes);
+  const box = getGroupBounds(strokes);
+  const w = box ? Math.max(30, box.maxX - box.minX) : 50;
+  const h = box ? Math.max(30, box.maxY - box.minY) : 50;
+
+  const resultStrokes = [];
+
+  for (const s of strokes) {
+    const target = makeCopy ? {
+      ...s,
+      id: 'elem-' + (nextStrokeId++),
+      points: s.points.map(p => ({ ...p }))
+    } : s;
+
+    if (axis === 'h') {
+      if (target.tool === 'text') {
+        target.flipX = !target.flipX;
+        target.points = target.points.map(p => ({ ...p, x: 2 * ctr.x - p.x }));
+        if (makeCopy) target.points = target.points.map(p => ({ ...p, x: p.x + w + 20 }));
+      } else {
+        target.points = target.points.map(p => ({ ...p, x: 2 * ctr.x - p.x }));
+        target.angle = -(target.angle || 0);
+        if (makeCopy) target.points = target.points.map(p => ({ ...p, x: p.x + w + 20 }));
+      }
+
+      if (target.tool === 'fill' && target.canvasImage) {
+        const cv = document.createElement('canvas');
+        cv.width = target.canvasImage.width; cv.height = target.canvasImage.height;
+        const cvc = cv.getContext('2d');
+        cvc.translate(cv.width, 0); cvc.scale(-1, 1);
+        cvc.drawImage(target.canvasImage, 0, 0);
+        target.canvasImage = cv;
+      }
+    } else if (axis === 'v') {
+      if (target.tool === 'text') {
+        target.flipY = !target.flipY;
+        target.points = target.points.map(p => ({ ...p, y: 2 * ctr.y - p.y }));
+        if (makeCopy) target.points = target.points.map(p => ({ ...p, y: p.y + h + 20 }));
+      } else {
+        target.points = target.points.map(p => ({ ...p, y: 2 * ctr.y - p.y }));
+        target.angle = -(target.angle || 0);
+        if (makeCopy) target.points = target.points.map(p => ({ ...p, y: p.y + h + 20 }));
+      }
+
+      if (target.tool === 'fill' && target.canvasImage) {
+        const cv = document.createElement('canvas');
+        cv.width = target.canvasImage.width; cv.height = target.canvasImage.height;
+        const cvc = cv.getContext('2d');
+        cvc.translate(0, cv.height); cvc.scale(1, -1);
+        cvc.drawImage(target.canvasImage, 0, 0);
+        target.canvasImage = cv;
+      }
+    }
+
+    if (makeCopy) history.push(target);
+    resultStrokes.push(target);
+  }
+
+  if (makeCopy) {
+    selectedStrokes = resultStrokes;
+    selectedStroke = resultStrokes[0];
+    notice(axis === 'h' ? `🪞 Copia en espejo horizontal (${strokes.length} elem.)` : `🪞 Copia en espejo vertical (${strokes.length} elem.)`);
+  } else {
+    notice(axis === 'h' ? '✓ Elementos reflejados horizontalmente' : '✓ Elementos reflejados verticalmente');
+  }
+
+  future = [];
+  inkLayers[activeInk].future = future;
+  render();
+}
+
+// Acción de Espejo rápido en barra principal (soporte múltiple)
+const toolMirrorQuickBtn = $('#toolMirrorQuick');
+if (toolMirrorQuickBtn) {
+  toolMirrorQuickBtn.onclick = () => {
+    if (selectedStrokes.length > 0) {
+      mirrorGroupStrokes(selectedStrokes, 'h', false);
+    } else {
+      setTool('select');
+      notice('Selecciona uno o más elementos para reflejar en espejo.');
+    }
+  };
+}
+
+$('#pen').onclick = () => setTool('pen');
+$('#graphite').onclick = () => setTool('graphite');
+$('#marker').onclick = () => setTool('marker');
+$('#highlighter').onclick = () => setTool('highlighter');
+$('#watercolor').onclick = () => setTool('watercolor');
+$('#v11Toggle').onclick=()=>{const open=document.body.classList.toggle('v11-expanded');$('#v11Toggle').setAttribute('aria-expanded',String(open));};
+$('#laserTool').onclick=()=>setTool('laser');
+ink.addEventListener('pointerleave',()=>{$('#laserDot').hidden=true;});
+$('#objectEraser').onchange=e=>{eraserByObject=e.target.checked;setTool('eraser');scheduleSessionSave();};
+$('#eraserDiameter').oninput=e=>{eraserDiameter=Number(e.target.value);$('#eraserDiameterValue').textContent=eraserDiameter+' px';scheduleSessionSave();};
+$('#observationsToggle').onclick=()=>toggleObservations($('#observationsPanel').hidden);
+$('#observationsClose').onclick=()=>toggleObservations(false);
+$('#observationsText').oninput=e=>{observations=e.target.value;scheduleSessionSave();};
+function updateProfileOptions(){const parallel=profilePreset.startsWith('parallel-');$('#parallelOptions').hidden=!parallel;$('#profileHatch').parentElement.hidden=!profilePreset.startsWith('beam-');}
+$('#profilePreset').onchange=e=>{profilePreset=e.target.value;updateProfileOptions();setTool('profile');scheduleSessionSave();};
+$('#parallelCount').oninput=e=>{parallelCount=Math.max(2,Math.min(20,Math.round(Number(e.target.value)||2)));scheduleSessionSave();};
+$('#parallelCount').onchange=e=>{e.target.value=parallelCount;};
+updateProfileOptions();
+$('#profileHatch').onchange=e=>{profileHatch=e.target.checked;scheduleSessionSave();};
+$('#profileTool').onclick=()=>setTool('profile');
+$('#eraser').onclick = () => setTool('eraser');
+$('#blend').onclick = () => setTool('blend');
+$('#vectorPen').onclick = () => setTool('vector');
+$('#bucket').onclick = () => setTool('bucket');
+$('#textTool').onclick = () => setTool('text');
+$('#lineTool').onclick = () => setTool('line');
+$('#curveTool').onclick = () => setTool('curve');
+$('#rectTool').onclick = () => setTool('rect');
+$('#circleTool').onclick = () => setTool('circle');
+$('#ellipseTool').onclick = () => setTool('ellipse');
+$('#arrowTool').onclick = () => setTool('arrow');
+$('#cloudTool').onclick = () => setTool('cloud');
+
+$('#rectCornerRadius').oninput = e => {
+  rectRadiusCm = Math.max(0, parseFloat(e.target.value) || 0);
+  rectRadius = Math.round(cmToPx(rectRadiusCm));
+};
+
+const selRectRadiusEl = $('#selRectRadius');
+if (selRectRadiusEl) {
+  selRectRadiusEl.oninput = e => {
+    const valCm = Math.max(0, parseFloat(e.target.value) || 0);
+    const valPx = Math.round(cmToPx(valCm));
+    selectedStrokes.forEach(s => { if (s.tool === 'rect') s.radius = valPx; });
+    render();
+  };
+}
+
+// Actualización de coordenadas del cursor en tiempo real (cm y px)
+paper.addEventListener('pointermove', e => {
+  const w = screenToWorld(e.clientX, e.clientY);
+  const curXCm = pxToCm(w.x);
+  const curYCm = pxToCm(w.y);
+  const posCmEl = $('#cursorPosCm');
+  const posPxEl = $('#cursorPosPx');
+  if (posCmEl) posCmEl.textContent = `${curXCm.toFixed(2)}, ${curYCm.toFixed(2)} cm`;
+  if (posPxEl) posPxEl.textContent = `(${Math.round(w.x)}, ${Math.round(w.y)} px)`;
+});
+
+document.querySelectorAll('[data-pattern]').forEach(b => b.onclick = () => setPattern(b.dataset.pattern));
+document.querySelectorAll('[data-bg]').forEach(b => b.onclick = () => setBackground(b.dataset.bg));
+document.querySelectorAll('[data-color]').forEach(b => b.onclick = () => selectColor(b.dataset.color));
+$('#inkColorCustom').oninput = e => selectColor(e.target.value);
+
+document.querySelectorAll('[data-snap]').forEach(b => b.onclick = () => {
+  snapMode = b.dataset.snap;
+  document.querySelectorAll('[data-snap]').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+
+$('#size').oninput = e => {
+  size = Number(e.target.value);
+  $('#sizeValue').textContent = size + ' px';
+  if (selectedStrokes.length > 0) {
+    selectedStrokes.forEach(s => { if (s.size) s.size = size; });
+    render();
+  }
+};
+
+$('#inkOpacity').oninput = e => {
+  inkOpacity = Number(e.target.value) / 100;
+  $('#opacityValue').textContent = e.target.value + '%';
+  scheduleSessionSave();
+  if (selectedStrokes.length > 0) {
+    selectedStrokes.forEach(s => s.opacity = inkOpacity);
+    render();
+  }
+};
+
+function undo() {
+  finish();
+  selectedStrokes = [];
+  selectedStroke = null;
+  if (history.length) {
+    future.push(history.pop());
+    render();
+  }
+}
+
+function redo() {
+  finish();
+  selectedStrokes = [];
+  selectedStroke = null;
+  if (future.length) {
+    history.push(future.pop());
+    render();
+  }
+}
+
+$('#undo').onclick = undo;
+$('#redo').onclick = redo;
+$('#clear').onclick = () => $('#confirm').showModal();
+$('#cancel').onclick = () => $('#confirm').close();
+$('#confirmClear').onclick = () => {
+  finish();
+  selectedStrokes = [];
+  selectedStroke = null;
+  history.push({ clear: true });
+  future = [];
+  inkLayers[activeInk].future = future;
+  render();
+  $('#confirm').close();
+  notice('Página limpia. Puedes deshacer este cambio.');
+};
+function rotateSelectedGroup(deg) {
+  if (!selectedStrokes.length) return;
+  const rad = (deg * Math.PI) / 180;
+  selectedStrokes.forEach(s => {
+    s.angle = (s.angle || 0) + rad;
+  });
+  future = [];
+  inkLayers[activeInk].future = future;
+  render();
+  notice(`Giro de ${deg}° aplicado`);
+}
+
+// Función de Escalado de Elementos Dibujados
+function scaleSelectedGroup(factor) {
+  if (!selectedStrokes.length || factor <= 0 || factor === 1) return;
+  const ctr = getGroupCenter(selectedStrokes);
+
+  for (const s of selectedStrokes) {
+    s.points = s.points.map(p => ({
+      ...p,
+      x: ctr.x + (p.x - ctr.x) * factor,
+      y: ctr.y + (p.y - ctr.y) * factor
+    }));
+
+    if (s.size) s.size = Math.max(1, s.size * factor);
+    if (s.fontSize) s.fontSize = Math.max(8, Math.round(s.fontSize * factor));
+    if (s.radius) s.radius = Math.max(0, Math.round(s.radius * factor));
+
+    if (s.tool === 'fill' && s.canvasImage) {
+      const oldCv = s.canvasImage;
+      const newCv = document.createElement('canvas');
+      newCv.width = Math.max(10, Math.round(oldCv.width * factor));
+      newCv.height = Math.max(10, Math.round(oldCv.height * factor));
+      const nCtx = newCv.getContext('2d');
+      nCtx.drawImage(oldCv, 0, 0, newCv.width, newCv.height);
+      s.canvasImage = newCv;
+    }
+  }
+
+  future = [];
+  inkLayers[activeInk].future = future;
+  render();
+  notice(`✓ Elementos escalados a ${(factor * 100).toFixed(0)}%`);
+}
+
+const btnScaleDown = $('#btnScaleDown');
+if (btnScaleDown) btnScaleDown.onclick = () => scaleSelectedGroup(0.8);
+
+const btnScaleUp = $('#btnScaleUp');
+if (btnScaleUp) btnScaleUp.onclick = () => scaleSelectedGroup(1.25);
+
+const btnScalePrompt = $('#btnScalePrompt');
+if (btnScalePrompt) {
+  btnScalePrompt.onclick = () => {
+    if (!selectedStrokes.length) return;
+    const ans = prompt('Ingresa el factor de escala (ej: 1.5 para 150%, 0.5 para la mitad, 2 para el doble):', '1.5');
+    if (ans !== null) {
+      const factor = parseFloat(ans.replace(',', '.'));
+      if (!isNaN(factor) && factor > 0.05 && factor < 20) {
+        scaleSelectedGroup(factor);
+      } else {
+        notice('Factor de escala no válido.');
+      }
+    }
+  };
+}
+
+$('#btnRotateLeft').onclick = () => rotateSelectedGroup(-45);
+$('#btnRotateRight').onclick = () => rotateSelectedGroup(45);
+$('#btnRotate90').onclick = () => rotateSelectedGroup(90);
+
+$('#btnMirrorH').onclick = () => mirrorGroupStrokes(selectedStrokes, 'h', false);
+$('#btnMirrorV').onclick = () => mirrorGroupStrokes(selectedStrokes, 'v', false);
+$('#btnMirrorCopyH').onclick = () => mirrorGroupStrokes(selectedStrokes, 'h', true);
+$('#btnMirrorCopyV').onclick = () => mirrorGroupStrokes(selectedStrokes, 'v', true);
+
+function parseCadVector(str) {
+  if (!str) return null;
+  let clean = str.trim();
+  if (clean.startsWith('@')) clean = clean.slice(1).trim();
+
+  // Polar: dist<angulo (la distancia ingresada está en centímetros)
+  if (clean.includes('<')) {
+    const parts = clean.split('<');
+    const distCm = parseFloat(parts[0]);
+    const angDeg = parseFloat(parts[1]);
+    if (isNaN(distCm) || isNaN(angDeg)) return null;
+    const distPx = cmToPx(distCm);
+    const rad = (angDeg * Math.PI) / 180;
+    return {
+      dx: distPx * Math.cos(rad),
+      dy: -distPx * Math.sin(rad)
+    };
+  }
+
+  // Cartesiano: dx,dy (en centímetros)
+  if (clean.includes(',')) {
+    const parts = clean.split(',');
+    const dxCm = parseFloat(parts[0]);
+    const dyCm = parseFloat(parts[1]);
+    if (isNaN(dxCm) || isNaN(dyCm)) return null;
+    return { dx: cmToPx(dxCm), dy: cmToPx(dyCm) };
+  }
+
+  return null;
+}
+
+$('#btnParamCopyToggle').onclick = () => {
+  const pop = $('#paramCopyPopover');
+  pop.hidden = !pop.hidden;
+  if (!pop.hidden) $('#cadVectorInput').focus();
+};
+
+$('#btnCloseParamCopy').onclick = () => {
+  $('#paramCopyPopover').hidden = true;
+};
+
+$('#btnExecuteParamCopy').onclick = () => {
+  if (!selectedStrokes.length) {
+    notice('Selecciona primero uno o varios elementos.');
+    return;
+  }
+  const vecStr = $('#cadVectorInput').value;
+  const vec = parseCadVector(vecStr);
+  if (!vec) {
+    notice('Formato inválido. Usa @dist<angulo (ej: @100<0) o @dx,dy (ej: @50,20)');
+    return;
+  }
+
+  const count = Math.max(1, parseInt($('#cadCountInput').value, 10) || 1);
+  const rotStepDeg = parseFloat($('#cadRotStepInput').value) || 0;
+  const rotStepRad = (rotStepDeg * Math.PI) / 180;
+
+  for (let k = 1; k <= count; k++) {
+    const kx = vec.dx * k;
+    const ky = vec.dy * k;
+    for (const item of selectedStrokes) {
+      const copyStroke = {
+        ...item,
+        id: 'elem-' + (nextStrokeId++),
+        angle: (item.angle || 0) + (rotStepRad * k),
+        points: item.points.map(p => ({ ...p, x: p.x + kx, y: p.y + ky }))
+      };
+
+      if (copyStroke.tool === 'fill' && copyStroke.canvasImage) {
+        const cvCopy = document.createElement('canvas');
+        cvCopy.width = copyStroke.canvasImage.width;
+        cvCopy.height = copyStroke.canvasImage.height;
+        const cvc = cvCopy.getContext('2d');
+        cvc.drawImage(copyStroke.canvasImage, kx, ky);
+        copyStroke.canvasImage = cvCopy;
+      }
+
+      history.push(copyStroke);
+    }
+  }
+
+  future = [];
+  inkLayers[activeInk].future = future;
+  $('#paramCopyPopover').hidden = true;
+  render();
+  notice(`✓ Se crearon ${count} grupo(s) de copias con vector ${vecStr}`);
+};
+
+$('#btnDuplicateObj').onclick = () => {
+  if (!selectedStrokes.length) return;
+  const newStrokes = selectedStrokes.map(s => ({
+    ...s,
+    id: 'elem-' + (nextStrokeId++),
+    points: s.points.map(p => ({ ...p, x: p.x + 20, y: p.y + 20 }))
+  }));
+  newStrokes.forEach(s => history.push(s));
+  future = [];
+  inkLayers[activeInk].future = future;
+  selectedStrokes = newStrokes;
+  selectedStroke = newStrokes[0];
+  render();
+  notice(`${newStrokes.length} elemento(s) duplicado(s)`);
+};
+
+$('#btnEditTextObj').onclick = () => {
+  const target = selectedStrokes.find(s => s.tool === 'text');
+  if (target) {
+    openTextPopover(target.points[0].x, target.points[0].y, target);
+  }
+};
+
+$('#btnDeleteObj').onclick = () => {
+  if (!selectedStrokes.length) return;
+  selectedStrokes.forEach(target => {
+    history.push({ id: 'elem-' + (nextStrokeId++), replaces: target.id, hidden: true });
+  });
+  future = [];
+  inkLayers[activeInk].future = future;
+  selectedStrokes = [];
+  selectedStroke = null;
+  render();
+  notice('Elementos eliminados');
+};
+$('#rulerZero').onclick = () => {
+  rulerState.angle = 0;
+  updateRulerPosition();
+};
+$('#autoStraight').onclick = () => {
+  autoStraight = !autoStraight;
+  $('#autoStraight').setAttribute('aria-pressed', autoStraight);
+  notice(autoStraight ? 'Auto recta activada' : 'Auto recta desactivada');
+};
+
+for (const id of ['rulerMove', 'rulerRotate']) {
+  const el = $('#' + id);
+  if (!el) continue;
+  el.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    rulerDrag = {
+      id,
+      pointer: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      origX: rulerState.x,
+      origY: rulerState.y,
+      origAngle: rulerState.angle
+    };
+  });
+  el.addEventListener('pointermove', e => {
+    if (!rulerDrag || rulerDrag.pointer !== e.pointerId) return;
+    e.preventDefault();
+    if (rulerDrag.id === 'rulerMove') {
+      const dx = (e.clientX - rulerDrag.startX) / zoom;
+      const dy = (e.clientY - rulerDrag.startY) / zoom;
+      rulerState.x = rulerDrag.origX + dx;
+      rulerState.y = rulerDrag.origY + dy;
+    } else {
+      const scr = worldToScreen(rulerState.x, rulerState.y);
+      const angleNow = Math.atan2(e.clientY - scr.y, e.clientX - scr.x);
+      const angleStart = Math.atan2(rulerDrag.startY - scr.y, rulerDrag.startX - scr.x);
+      rulerState.angle = rulerDrag.origAngle + (angleNow - angleStart);
+    }
+    updateRulerPosition();
+  });
+  const stopRuler = e => {
+    if (rulerDrag && rulerDrag.pointer === e.pointerId) rulerDrag = null;
+  };
+  el.addEventListener('pointerup', stopRuler);
+  el.addEventListener('pointercancel', stopRuler);
+}
+
+// Calibración táctil
+function placeCalibrationTarget() {
+  const target = $('#calibrationTarget');
+  if (!calibrationSamples) {
+    target.hidden = true;
+    return;
+  }
+  const t = calibrationTargets[calibrationSamples.length];
+  const scr = worldToScreen(t.x * sheetWidth, t.y * sheetHeight);
+  target.style.left = scr.x + 'px';
+  target.style.top = scr.y + 'px';
+  target.hidden = false;
+  $('#calibrationText').textContent = `Toca el centro de la marca con tu lápiz · ${calibrationSamples.length + 1}/3`;
+}
+
+function stopCalibration() {
+  calibrationSamples = null;
+  $('#calibrationHelp').hidden = true;
+  $('#calibrationTarget').hidden = true;
+  $('#calibrate').setAttribute('aria-pressed', 'false');
+}
+
+function solveCalibration(samples) {
+  const [a, b, c] = samples;
+  const dx1 = b.u - a.u, dy1 = b.v - a.v, dx2 = c.u - a.u, dy2 = c.v - a.v;
+  const det = dx1 * dy2 - dx2 * dy1;
+  if (Math.abs(det) < 0.025) return null;
+  const t = calibrationTargets;
+  const x1 = t[1].x - t[0].x, x2 = t[2].x - t[0].x, y1 = t[1].y - t[0].y, y2 = t[2].y - t[0].y;
+  const ax = (x1 * dy2 - x2 * dy1) / det, bx = (dx1 * x2 - dx2 * x1) / det;
+  const ay = (y1 * dy2 - y2 * dy1) / det, by = (dx1 * y2 - dx2 * y1) / det;
+  return [ax, bx, t[0].x - ax * a.u - bx * a.v, ay, by, t[0].y - ay * a.u - by * a.v];
+}
+
+function recordCalibration(e) {
+  e.preventDefault();
+  const r = ink.getBoundingClientRect();
+  const type = e.pointerType || 'mouse';
+  calibrationSamples.push({ u: (e.clientX - r.left) / r.width, v: (e.clientY - r.top) / r.height, type });
+  if (calibrationSamples.length < 3) {
+    placeCalibrationTarget();
+  } else {
+    const mat = solveCalibration(calibrationSamples);
+    if (mat) {
+      calibration = { type, matrix: mat };
+      try { localStorage.setItem(calibrationKey, JSON.stringify(calibration)); } catch (e) {}
+      stopCalibration();
+      notice('Lápiz calibrado con éxito.');
+    } else {
+      calibrationSamples = [];
+      placeCalibrationTarget();
+      notice('Calibración imprecisa. Toca las tres marcas de nuevo.');
+    }
+  }
+}
+
+$('#calibrate').onclick = () => {
+  finish();
+  calibrationSamples = [];
+  $('#calibrationHelp').hidden = false;
+  $('#resetCalibration').hidden = !calibration;
+  $('#calibrate').setAttribute('aria-pressed', 'true');
+  placeCalibrationTarget();
+};
+$('#cancelCalibration').onclick = stopCalibration;
+$('#resetCalibration').onclick = () => {
+  calibration = null;
+  try { localStorage.removeItem(calibrationKey); } catch (e) {}
+  stopCalibration();
+  notice('Calibración restablecida.');
+};
+
+// Exportación en Alta Resolución
+$('#export').onclick = async () => {
+  finish();
+  await Promise.all(layers.filter(l=>l.visible&&l.pdf).map(loadPDFLayer));
+  const out = document.createElement('canvas');
+  const wantedScale = Number($('#exportResolution').value);
+  const exportScale = Math.min(wantedScale, Math.sqrt(16000000 / (sheetWidth * sheetHeight)), 4096 / Math.max(sheetWidth, sheetHeight));
+  out.width = Math.round(sheetWidth * exportScale);
+  out.height = Math.round(sheetHeight * exportScale);
+  const c = out.getContext('2d');
+  c.scale(exportScale, exportScale);
+  c.imageSmoothingEnabled = true;
+  c.imageSmoothingQuality = 'high';
+
+  // Fondo del papel y margen
+  c.fillStyle = paperColor;
+  c.fillRect(0, 0, sheetWidth, sheetHeight);
+  drawPaperSheet(c);
+  renderBgLayers(c);
+  drawRedMargins(c, 1);
+
+  // Tinta
+  inkLayers.forEach(il => {
+    if (il.visible !== false) {
+      c.globalAlpha = il.opacity ?? 1;
+      visibleInkStrokes(il.strokes).forEach(s => stroke(c, s));
+    }
+  });
+
+  out.toBlob(blob => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cuaderno-${currentSheetPreset}-${new Date().toISOString().slice(0,10)}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    notice(`PNG descargado: ${out.width} × ${out.height} px.`);
+  }, 'image/png');
+};
+
+// Atajos de teclado de una letra; nunca interceptan la escritura en formularios.
+
+const canvasWrap=document.querySelector('.paper-wrap');
+canvasWrap.append($('#shortcutHelp'));
+canvasWrap.append($('#laserDot'));
+canvasWrap.append(document.querySelector('.zoom-overlay'));
+const TOOL_SHORTCUTS={
+ b:['pen','Bolígrafo','pen'],g:['graphite','Grafito','graphite'],p:['marker','Marcador','marker'],k:['highlighter','Resaltador','highlighter'],j:['watercolor','Acuarela','watercolor'],
+ e:['eraser','Goma','eraser'],m:['blend','Mezclador','blend'],v:['vector','Pluma vectorial','vectorPen'],f:['bucket','Relleno','bucket'],
+ t:['text','Texto','textTool'],l:['line','Línea','lineTool'],u:['curve','Curva','curveTool'],r:['rect','Rectángulo','rectTool'],c:['circle','Círculo','circleTool'],o:['ellipse','Elipse','ellipseTool'],
+ a:['arrow','Flecha','arrowTool'],w:['cloud','Nube','cloudTool'],h:['pan','Mano','toolPan'],s:['select','Selección / Mover','toolSelect'],q:['laser','Puntero láser','laserTool'],i:['profile','Figura predeterminada','profileTool']
+};
+const ACTION_SHORTCUTS={d:['Cuentagotas','picker'],n:['Observaciones','observationsToggle'],x:['Regla','rulerToggle'],y:['Auto recta','autoStraight'],z:['Ajustar hoja completa','zoomResetBtn']};
+function initShortcuts(){
+ const list=$('#shortcutList');
+ for(const [key,value] of Object.entries({...TOOL_SHORTCUTS,...ACTION_SHORTCUTS})){
+  const action=key in TOOL_SHORTCUTS,name=action?value[1]:value[0],id=action?value[2]:value[1],button=$('#'+id);
+  if(button){button.title=name+' ('+key.toUpperCase()+')';button.setAttribute('aria-keyshortcuts',key.toUpperCase());const badge=document.createElement('span');badge.className='shortcut-key';badge.textContent=key.toUpperCase();badge.setAttribute('aria-hidden','true');button.appendChild(badge);}
+  const row=document.createElement('div'),kbd=document.createElement('kbd'),label=document.createElement('span');kbd.textContent=key.toUpperCase();label.textContent=name;row.append(kbd,label);list.appendChild(row);
+ }
+ $('#fullscreenBtn').setAttribute('aria-keyshortcuts','F3');
+}
+function setCleanView(enabled){
+ if(cleanView===enabled)return;
+ finish();document.activeElement?.blur();
+ if(enabled)cleanCamera={zoom,panX,panY};
+ cleanView=enabled;document.body.classList.toggle('clean-view',enabled);canvasWrap.classList.toggle('canvas-fullscreen',enabled);$('#canvasFullscreen').textContent=enabled?'⛶ Salir':'⛶ Pantalla completa';$('#canvasFullscreen').setAttribute('aria-pressed',String(enabled));$('#fullscreenBtn').setAttribute('aria-pressed',String(enabled));
+ requestAnimationFrame(()=>{resize();if(cleanView)resetView();else if(cleanCamera){({zoom,panX,panY}=cleanCamera);cleanCamera=null;render();}});
+}
+async function toggleCleanView(){
+ if(cleanView){setCleanView(false);if(document.fullscreenElement)try{await document.exitFullscreen();}catch{}return;}
+ setCleanView(true);
+ try{if(canvasWrap.requestFullscreen)await canvasWrap.requestFullscreen();}catch{notice('Vista limpia activada dentro de la ventana.');}
+ requestAnimationFrame(()=>{if(cleanView)resetView();});
+}
+document.addEventListener('fullscreenchange',()=>{if(!document.fullscreenElement&&cleanView){setCleanView(false);return;}requestAnimationFrame(()=>{if(cleanView){resize();resetView();}});});
+$('#canvasFullscreen').onclick=toggleCleanView;$('#canvasHelp').onclick=()=>$('#shortcutHelp').showModal();
+$('#fullscreenBtn').onclick=toggleCleanView;$('#exitCleanView').onclick=toggleCleanView;
+$('#shortcutHelpBtn').onclick=()=>$('#shortcutHelp').showModal();$('#closeShortcutHelp').onclick=()=>$('#shortcutHelp').close();
+initShortcuts();
+document.addEventListener('keydown',e=>{
+ if(e.isComposing)return;
+ if(e.key==='F3'){e.preventDefault();if(!e.repeat)toggleCleanView();return;}
+ if(e.key==='Escape'&&cleanView){e.preventDefault();toggleCleanView();return;}
+ if(e.target?.isContentEditable||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName)||document.querySelector('dialog[open]'))return;
+ if(e.code==='Space'){e.preventDefault();if(!spacePressed){spacePressed=true;ink.style.cursor='grab';}return;}
+ const k=e.key.toLowerCase();
+ if((e.ctrlKey||e.metaKey)&&['z','y'].includes(k)){e.preventDefault();if(e.shiftKey||k==='y')redo();else undo();return;}
+ if(e.ctrlKey||e.metaKey||e.altKey||e.repeat)return;
+ if(e.shiftKey&&k==='f'){e.preventDefault();toggleCleanView();return;}
+ if(k in TOOL_SHORTCUTS){e.preventDefault();pickerMode=false;$('#picker').setAttribute('aria-pressed','false');setTool(TOOL_SHORTCUTS[k][0]);}
+ else if(k in ACTION_SHORTCUTS){e.preventDefault();$('#'+ACTION_SHORTCUTS[k][1]).click();}
+ else if(e.key==='?'){e.preventDefault();$('#shortcutHelp').showModal();}
+ else if((e.key==='Delete'||e.key==='Backspace')&&selectedStrokes.length){e.preventDefault();$('#btnDeleteObj').click();}
+});
+
+document.addEventListener('keyup', e => {
+  if (e.key === 'Escape' && cleanView && !document.fullscreenElement) { toggleCleanView(); return; }
+  if (e.code === 'Space' && spacePressed) {
+    spacePressed = false;
+    isPanning = false;
+    ink.style.cursor = tool === 'pan' ? 'grab' : 'crosshair';
+  }
+});
+
+$('#pressureEnabled').onchange = e => { pressureEnabled=e.target.checked; notice(pressureEnabled?'Presión activada: usa un lápiz compatible.':'Grosor uniforme activado.'); };
+$('#pressureSensitivity').oninput = e => { pressureSensitivity=Number(e.target.value); $('#pressureValue').textContent=pressureSensitivity+'×'; };
+// Inicialización de la aplicación
+new ResizeObserver(resize).observe(paper);
+renderLayerUI();
+setTimeout(resetView, 80);
+</script>
+<script>
+// Sesiones editables: formato portable y copia local en IndexedDB.
+const sessionPDFSources = new WeakMap();
+const sessionImageCache = new WeakMap();
+const sessionBytesCache = new WeakMap();
+let sessionRestoring = true, sessionDirty = false, sessionSaving = false, sessionTimer = 0;
+let sessionRevision = 0, sessionDBPromise;
+
+function sessionDB() {
+  if (!sessionDBPromise) sessionDBPromise = new Promise((resolve,reject)=>{
+    const request=indexedDB.open('cuaderno-sesiones-v1',1);
+    request.onupgradeneeded=()=>request.result.createObjectStore('sesiones');
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error);
+  });
+  return sessionDBPromise;
+}
+async function sessionStore(mode,value) {
+  const db=await sessionDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction('sesiones',mode),store=tx.objectStore('sesiones');
+    const request=mode==='readonly'?store.get('ultima'):store.put(value,'ultima');
+    tx.oncomplete=()=>resolve(request.result);
+    tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+  });
+}
+function bytesToBase64(buffer) {
+  if(sessionBytesCache.has(buffer))return sessionBytesCache.get(buffer);
+  const bytes=new Uint8Array(buffer);let out='';
+  for(let i=0;i<bytes.length;i+=32768) out+=String.fromCharCode(...bytes.subarray(i,i+32768));
+  const value=btoa(out);sessionBytesCache.set(buffer,value);return value;
+}
+function base64ToBytes(value) {
+  const binary=atob(value),bytes=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)bytes[i]=binary.charCodeAt(i);
+  return bytes;
+}
+function sessionImage(image) {
+  if(!image)return null;
+  if(sessionImageCache.has(image))return sessionImageCache.get(image);
+  let value;
+  if(image instanceof HTMLImageElement && image.src.startsWith('data:image/'))value=image.src;
+  else {
+    const cv=document.createElement('canvas');cv.width=image.naturalWidth||image.width;cv.height=image.naturalHeight||image.height;
+    cv.getContext('2d').drawImage(image,0,0);value=cv.toDataURL('image/png');
+  }
+  sessionImageCache.set(image,value);return value;
+}
+function sessionStroke(s) {
+  const copy={...s,points:s.points?.map(p=>({...p}))};
+  delete copy.pointer;delete copy.canvasImage;
+  if(s.canvasImage)copy.fillImage=sessionImage(s.canvasImage);
+  return copy;
+}
+function makeSession() {
+  const documents=[],pdfIds=new Map();
+  const backgrounds=layers.map(l=>{
+    let pdfId=null;
+    if(l.pdf) {
+      if(!pdfIds.has(l.pdf)) {
+        const bytes=sessionPDFSources.get(l.pdf);
+        if(!bytes)throw Error('Reimporta este PDF para incluir su original en la sesión.');
+        pdfIds.set(l.pdf,documents.length);documents.push(bytesToBase64(bytes));
+      }
+      pdfId=pdfIds.get(l.pdf);
+    }
+    return {name:l.name,opacity:l.opacity,visible:l.visible,scale:l.scale||1,offsetX:l.offsetX||0,offsetY:l.offsetY||0,
+      pageNumber:l.pageNumber,pdfId,image:sessionImage(l.image)};
+  });
+  return {format:'cuaderno-sesion',version:1,savedAt:new Date().toISOString(),
+    paper:{width:sheetWidth,height:sheetHeight,preset:currentSheetPreset,pattern:paperPattern,color:paperColor,colorName:paperColorName,margin:showRedMargin},
+    brush:{tool,color,size,opacity:inkOpacity,pressure:pressureEnabled,sensitivity:pressureSensitivity},
+    observations, workspaceTools:{eraserByObject,eraserDiameter,profilePreset,profileHatch,parallelCount},
+    camera:{zoom,panX,panY},activeInk,selectedBgLayer,nextStrokeId,
+    ink:inkLayers.map(l=>({name:l.name,opacity:l.opacity,visible:l.visible,strokes:l.strokes.map(sessionStroke),future:l.future.map(sessionStroke)})),
+    backgrounds,documents};
+}
+function decodeSessionImage(value) {
+  if(!value)return Promise.resolve(null);
+  if(!/^data:image\/(png|jpeg|webp|gif|bmp);base64,/.test(value))throw Error('Imagen de sesión no válida.');
+  return new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>{sessionImageCache.set(im,value);resolve(im)};im.onerror=()=>reject(Error('No se pudo recuperar una imagen.'));im.src=value});
+}
+async function restoreSession(data) {
+  if(data?.format!=='cuaderno-sesion'||data.version!==1||!Array.isArray(data.ink)||!data.ink.length||!Array.isArray(data.backgrounds)||!Array.isArray(data.documents))throw Error('Archivo de sesión no compatible.');
+  const p=data.paper;
+  if(!p||![p.width,p.height].every(n=>Number.isFinite(n)&&n>0&&n<100000)||!['grid','lines','plain'].includes(p.pattern)||!/^#[0-9a-f]{6}$/i.test(p.color))throw Error('Hoja no válida.');
+  // Decodificar todo antes de reemplazar el cuaderno que está abierto.
+  const pdfs=[];
+  if(data.documents.length&&!window.pdfjsLib)throw Error('El lector PDF no está disponible. Conéctate a Internet y reintenta.');
+  for(const encoded of data.documents) {
+    const bytes=base64ToBytes(encoded),original=bytes.slice().buffer;
+    pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    const pdf=await pdfjsLib.getDocument({data:bytes}).promise;
+    sessionPDFSources.set(pdf,original);pdfs.push(pdf);
+  }
+  const newBackgrounds=await Promise.all(data.backgrounds.map(async l=>{
+    if(l.pdfId!==null&&(!Number.isInteger(l.pdfId)||!pdfs[l.pdfId]))throw Error('Referencia PDF no válida.');
+    return {...l,image:await decodeSessionImage(l.image),pdf:l.pdfId===null?null:pdfs[l.pdfId]};
+  }));
+  const decodeStroke=async s=>{
+    if(!s||typeof s.tool!=='string'&&!s.clear||!Array.isArray(s.points)&&!s.clear)throw Error('Trazo no válido.');
+    const copy={...s};delete copy.fillImage;
+    if(s.fillImage) {
+      const im=await decodeSessionImage(s.fillImage),cv=document.createElement('canvas');cv.width=im.width;cv.height=im.height;
+      cv.getContext('2d').drawImage(im,0,0);copy.canvasImage=cv;sessionImageCache.set(cv,s.fillImage);
+    }
+    return copy;
+  };
+  const newInk=await Promise.all(data.ink.map(async l=>({...l,strokes:await Promise.all(l.strokes.map(decodeStroke)),future:await Promise.all((l.future||[]).map(decodeStroke))})));
+  sessionRestoring=true;
+  try {
+    finish();selectedStrokes=[];selectedStroke=null;dragMove=null;rotationDrag=null;marquee=null;active=null;
+    layers=newBackgrounds;inkLayers=newInk;activeInk=Math.max(0,Math.min(newInk.length-1,Number(data.activeInk)||0));
+    history=inkLayers[activeInk].strokes;future=inkLayers[activeInk].future;selectedBgLayer=data.selectedBgLayer;
+    nextStrokeId=Math.max(Number(data.nextStrokeId)||1,1);
+    sheetWidth=p.width;sheetHeight=p.height;currentSheetPreset=SHEET_PRESETS[p.preset]?p.preset:'custom';paperPattern=p.pattern;paperColor=p.color;paperColorName=p.colorName;showRedMargin=!!p.margin;
+    observations=typeof data.observations==='string'?data.observations:'';$('#observationsText').value=observations;
+    const settings=data.workspaceTools||{};eraserByObject=!!settings.eraserByObject;eraserDiameter=Math.max(2,Math.min(120,Number(settings.eraserDiameter)||24));profilePreset=PROFILE_POLYGONS[settings.profilePreset]?settings.profilePreset:'beam-normal';profileHatch=settings.profileHatch!==false;parallelCount=Math.max(2,Math.min(20,Math.round(Number(settings.parallelCount)||2)));
+    $('#objectEraser').checked=eraserByObject;$('#eraserDiameter').value=eraserDiameter;$('#eraserDiameterValue').textContent=eraserDiameter+' px';$('#profilePreset').value=profilePreset;$('#profileHatch').checked=profileHatch;$('#parallelCount').value=parallelCount;updateProfileOptions();
+    const b=data.brush||{};color=/^#[0-9a-f]{6}$/i.test(b.color)?b.color:'#292e35';size=Math.max(1,Math.min(16,Number(b.size)||3));inkOpacity=Math.max(0,Math.min(1,Number.isFinite(Number(b.opacity))?Number(b.opacity):1));pressureEnabled=b.pressure!==false;pressureSensitivity=Math.max(.5,Math.min(2,Number(b.sensitivity)||1));
+    $('#sheetFormatSelect').value=currentSheetPreset;$('#showRedMargin').checked=showRedMargin;$('#inkColorCustom').value=color;
+    if(currentSheetPreset==='custom') {SHEET_PRESETS.custom.wCm=pxToCm(sheetWidth);SHEET_PRESETS.custom.hCm=pxToCm(sheetHeight);}
+    $('#size').value=size;$('#sizeValue').textContent=size+' px';$('#inkOpacity').value=inkOpacity*100;$('#opacityValue').textContent=Math.round(inkOpacity*100)+'%';
+    $('#pressureEnabled').checked=pressureEnabled;$('#pressureSensitivity').value=pressureSensitivity;$('#pressureValue').textContent=pressureSensitivity+'×';
+    document.querySelectorAll('[data-color]').forEach(x=>x.setAttribute('aria-pressed',x.dataset.color.toLowerCase()===color.toLowerCase()));
+    document.querySelectorAll('[data-bg]').forEach(x=>x.setAttribute('aria-pressed',false));
+    setTool(['pen','graphite','marker','highlighter','watercolor','vector','line','circle','ellipse','rect','text','pan','select','eraser','blend','curve','arrow','cloud','bucket','profile'].includes(b.tool)?b.tool:'pen');
+    setPattern(p.pattern);renderLayerUI();resetView();
+    if(!mobileModeEnabled&&data.camera&&[data.camera.zoom,data.camera.panX,data.camera.panY].every(Number.isFinite)){zoom=Math.max(.08,Math.min(5,data.camera.zoom));panX=data.camera.panX;panY=data.camera.panY;render();}
+  } finally {sessionRestoring=false;}
+  notice('Sesión recuperada con sus capas y trazos editables.');
+}
+function scheduleSessionSave() {
+  if(sessionRestoring)return;
+  sessionDirty=true;sessionRevision++;clearTimeout(sessionTimer);
+  sessionTimer=setTimeout(saveSessionCopy,2500);
+  $('#sessionState').textContent='Sesión: cambios pendientes';
+}
+async function saveSessionCopy() {
+  if(sessionSaving||sessionRestoring||!sessionDirty)return;
+  sessionSaving=true;const revision=sessionRevision;
+  try {
+    const data=makeSession();await sessionStore('readwrite',data);
+    sessionDirty=revision!==sessionRevision;
+    $('#sessionState').textContent=sessionDirty?'Sesión: cambios pendientes':'Sesión: copia local guardada';
+  } catch(error) {$('#sessionState').textContent='Copia local no disponible: usa Guardar sesión';}
+  finally {sessionSaving=false;if(sessionDirty)sessionTimer=setTimeout(saveSessionCopy,10000);}
+}
+const sessionOriginalRender=render;
+render=function(){sessionOriginalRender();scheduleSessionSave();};
+$('#saveSession').onclick=async()=>{
+  finish();
+  try {
+    const data=makeSession(),blob=new Blob([JSON.stringify(data)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+    a.href=url;a.download='cuaderno-'+new Date().toISOString().slice(0,10)+'.cuaderno.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);
+    await saveSessionCopy();notice('Sesión editable descargada. Puedes abrirla en otro dispositivo.');
+  }catch(error){notice('No se pudo guardar: '+error.message)}
+};
+$('#openSession').onclick=()=>$('#sessionFile').click();
+$('#sessionFile').onchange=async e=>{
+  const file=e.target.files[0];e.target.value='';if(!file)return;
+  finish();
+  $('#sessionLoading').hidden=false;
+  try {await restoreSession(JSON.parse(await file.text()));scheduleSessionSave();}
+  catch(error){notice('No se pudo abrir la sesión: '+error.message)}
+  finally {$('#sessionLoading').hidden=true;}
+};
+$('#recoverSession').onclick=async()=>{
+  $('#sessionLoading').hidden=false;
+  try {const data=await sessionStore('readonly');if(!data){notice('Aún no hay una copia local.');return}await restoreSession(data);$('#sessionState').textContent='Sesión: copia local recuperada';}
+  catch(error){notice('No se pudo recuperar: '+error.message)}
+  finally {$('#sessionLoading').hidden=true;}
+};
+window.addEventListener('beforeunload',e=>{if(sessionDirty){e.preventDefault();e.returnValue=''}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){finish();saveSessionCopy();}});
+
+// Instalar como app: el navegador decide cuándo permite mostrar el aviso.
+let installPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installPrompt=e;$('#installApp').textContent='Instalar app';});
+$('#installApp').onclick=async()=>{
+  if(installPrompt){await installPrompt.prompt();await installPrompt.userChoice;installPrompt=null;}
+  else $('#installHelp').showModal();
+};
+$('#closeInstallHelp').onclick=()=>$('#installHelp').close();
+if('serviceWorker' in navigator && location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
+(async()=>{
+  $('#sessionLoading').hidden=false;
+  try {const data=await sessionStore('readonly');if(data){await restoreSession(data);$('#sessionState').textContent='Sesión: copia local recuperada';}else $('#sessionState').textContent='Sesión: lista para guardar';}
+  catch(error){$('#sessionState').textContent='Copia local no disponible: usa Guardar sesión';}
+  finally {sessionRestoring=false;$('#sessionLoading').hidden=true;}
+})();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "id": "./",
+  "name": "Cuaderno · Tu espacio en papel",
+  "short_name": "Cuaderno",
+  "description": "Libreta táctil para escribir y dibujar, con Apple Pencil, capas y zoom. Funciona sin conexión.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "es",
+  "background_color": "#eeece7",
+  "theme_color": "#30534a",
+  "categories": [
+    "productivity",
+    "education"
+  ],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
