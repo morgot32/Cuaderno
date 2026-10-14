@@ -1463,6 +1463,46 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
           <input id="fQOff" type="number" min="0.1" max="100" step="0.1" inputmode="decimal" placeholder="ideal" aria-label="Ancho del quiebre en cm" style="width:68px"><span>cm</span></label>
         <label class="dcmd" title="Desplazar el quiebre hacia el otro lado"><span>Quiebre al otro lado</span><input id="fQSide" type="checkbox" aria-label="Quiebre al otro lado"></label>
       </div>
+      <div class="group fbar-row" role="group" aria-label="Grosor y ángulo">
+        <label class="dcmd" title="Grosor de la línea de la barra en px. Vacío = según el diámetro. Si hay una barra seleccionada, la cambia"><span>Grosor</span>
+          <input id="fLW" type="number" min="0.5" max="30" step="0.5" inputmode="decimal" placeholder="auto" aria-label="Grosor de la barra" style="width:64px"><span>px</span></label>
+        <label class="dcmd" title="Limita el ángulo al dibujar la barra o el texto"><span>Ángulo al dibujar</span>
+          <select id="fSnap" aria-label="Ángulo al dibujar"><option value="0">Libre</option><option value="90">Ortogonal 0°/90°</option><option value="45">Pasos de 45°</option><option value="15">Pasos de 15°</option></select></label>
+        <label class="dcmd" title="Ángulo de la barra seleccionada (grados, antihorario). Escribe un valor para girarla"><span>Girar a</span>
+          <input id="fAng" type="number" step="1" inputmode="decimal" placeholder="—" aria-label="Ángulo de la barra seleccionada" style="width:64px"><span>°</span></label>
+      </div>
+      <div class="group fbar-row" role="group" aria-label="Poner texto a barras ya dibujadas">
+        <button type="button" class="tool" id="fLabelMode" aria-pressed="false" title="Haz clic sobre una barra ya dibujada para ponerle (o cambiarle) el texto con la cantidad, Ø y «a» del panel">🏷 Rotular barra (clic)</button>
+        <button type="button" class="tool" id="fApplySel" title="Pone el texto del panel a las barras seleccionadas">Texto a selección</button>
+        <button type="button" class="tool" id="fRemoveSel" title="Quita el texto de las barras seleccionadas">Quitar texto</button>
+      </div>
+      <div class="group fbar-row" role="group" aria-label="Tamaño y giro del texto">
+        <button type="button" class="tool" id="fFontMinus" title="Texto más pequeño (−2 px). Con barras o textos seleccionados los cambia; si no, cambia el tamaño base">A−</button>
+        <button type="button" class="tool" id="fFontPlus" title="Texto más grande (+2 px). Con barras o textos seleccionados los cambia; si no, cambia el tamaño base">A+</button>
+        <button type="button" class="tool" id="fTextRot" title="Gira el texto 90° en las barras y textos seleccionados (vuelve a pulsar para volver)">↻ Texto 90°</button>
+        <label class="dcmd" title="Los textos nuevos salen girados 90°"><span>Nuevos a 90°</span><input id="fTRot" type="checkbox" aria-label="Textos nuevos girados 90 grados"></label>
+      </div>
+      <div class="sep"></div>
+      <div class="group" id="fTxtTypes" role="group" aria-label="Textos de armadura"></div>
+      <div class="group fbar-row" id="fMallaRow" role="group" aria-label="Texto de malla" hidden>
+        <label class="dcmd" title="Código de la malla. Ej.: M.H.A."><span>Malla</span><input id="fMPre" type="text" list="fMPreList" autocomplete="off" spellcheck="false" style="width:84px" aria-label="Código de malla"></label>
+        <datalist id="fMPreList"><option value="M.H.A."><option value="M.H.B."><option value="M.V.A."><option value="M.V.B."><option value="M.H."><option value="M.V."></datalist>
+        <label class="dcmd" title="Espesor, cm"><span>e=</span><input id="fME" type="number" min="1" max="999" step="1" inputmode="numeric" style="width:60px" aria-label="Espesor"></label>
+        <label class="dcmd" title="Tipo de malla. Ej.: D.M. (doble malla)"><span>Tipo</span><input id="fMTipo" type="text" list="fMTipoList" autocomplete="off" spellcheck="false" style="width:64px" aria-label="Tipo de malla"></label>
+        <datalist id="fMTipoList"><option value="D.M."><option value="S.M."><option value="M."></datalist>
+        <span class="dhint">Usa el Ø y el «a» de arriba.</span>
+      </div>
+      <div class="group fbar-row" id="fEstRow" role="group" aria-label="Texto de estribos y laterales" hidden>
+        <label class="dcmd" title="Incluir línea de estribos (E. Øxa20)"><span>Estribos</span><input id="fEOn" type="checkbox" aria-label="Incluir estribos"></label>
+        <label class="dcmd" title="Incluir línea de laterales (LAT.:2+2Ø8)"><span>Laterales</span><input id="fLOn" type="checkbox" aria-label="Incluir laterales"></label>
+        <label class="dcmd" title="Cantidad de laterales. Ej.: 2+2"><span>Cant.</span><input id="fLQty" type="text" autocomplete="off" spellcheck="false" style="width:64px" aria-label="Cantidad de laterales"></label>
+        <label class="dcmd" title="Diámetro de los laterales"><span>Ø lat.</span><select id="fLD" aria-label="Diámetro de laterales"></select></label>
+        <span class="dhint">Estribos usa el Ø y el «a» de arriba.</span>
+      </div>
+      <div class="group fbar-row" id="fTxtOpts" role="group" aria-label="Opciones del texto" hidden>
+        <label class="dcmd" title="Texto en vertical (se lee de abajo hacia arriba) al hacer solo clic"><span>Vertical</span><input id="fVert" type="checkbox" aria-label="Texto vertical"></label>
+        <span class="dhint">Clic = coloca el texto. Arrastra para orientarlo.</span>
+      </div>
       <span class="dhint" id="fPreview"></span>
       <span class="dhint">Arrastra del punto <b>1</b> al punto <b>2</b>. El texto sale con su línea de referencia (ej. <b>2Ø12 a 20</b>). Comando: <b>F12</b>.</span>
     </div>
@@ -2058,7 +2098,7 @@ const D_SHAPES={
 for(const k of Object.keys(D_SHAPES))PROFILE_POLYGONS[k]=[];
 // Barras F: tipos de barra x diámetro. Se dibuja una forma elástica (P1→P2) con texto y línea de referencia.
 const F_SHAPES={F8:{d:8},F10:{d:10},F12:{d:12},F16:{d:16}}; // compatibilidad con versiones anteriores
-const F_DIAMETERS=[8,10,12,16];
+const F_DIAMETERS=[8,10,12,16,18,22,25,28,32];
 const F_TYPES={
  recta:{name:'Recta'},
  quiebre:{name:'Recta con quiebre'},
@@ -2070,15 +2110,16 @@ const F_TYPES={
 };
 PROFILE_POLYGONS.FBAR=[];
 for(const k of Object.keys(F_SHAPES))PROFILE_POLYGONS[k]=[];
-const barWidth=d=>Math.max(1.5,d/3.5);
-const barState={type:'recta',d:12,qty:'',esp:'',flip:false,font:16,show:true,qLen:'',qOff:'',qFlip:false};
+const barWidth=d=>Math.max(1.5,Math.min(7,d/4));
+const barLW=b=>Number(b.lw)>0?Number(b.lw):barWidth(b.d);
+const barState={type:'recta',d:12,qty:'',esp:'',flip:false,font:16,show:true,qLen:'',qOff:'',qFlip:false,txKind:'malla',mPre:'M.H.A.',mE:'20',mTipo:'D.M.',eOn:true,lOn:true,lQty:'2+2',lD:8,vertical:false,lw:'',snap:0,trot:0};
 try{Object.assign(barState,JSON.parse(localStorage.getItem('cuaderno-bar-v2')||'{}'));}catch(e){}
 if(!F_TYPES[barState.type])barState.type='recta';
 if(!F_DIAMETERS.includes(Number(barState.d)))barState.d=12;
 barState.d=Number(barState.d);barState.font=Math.max(6,Math.min(80,Number(barState.font)||16));
 function barSave(){try{localStorage.setItem('cuaderno-bar-v2',JSON.stringify(barState));}catch(e){}}
 function barText(st){const q=Math.round(Number(st.qty)),e=Math.round(Number(st.esp));return (q>0?q:'')+'Ø'+st.d+(e>0?' a '+e:'');}
-function barSnapshot(){return {type:barState.type,d:barState.d,text:barText(barState),font:barState.font,show:barState.show,flip:barState.flip,qLen:barState.qLen,qOff:barState.qOff,qFlip:barState.qFlip};}
+function barSnapshot(){return {type:barState.type,d:barState.d,text:barText(barState),font:barState.font,show:barState.show,flip:barState.flip,qLen:barState.qLen,qOff:barState.qOff,qFlip:barState.qFlip,lw:barState.lw,trot:barState.trot?90:0};}
 function barOf(s){
  if(s.bar)return s.bar;
  const f=F_SHAPES[s.preset];
@@ -2102,7 +2143,7 @@ function barGeometry(s){
    const sg=b.qFlip?-1:1,nR={x:-u.y*sg,y:u.x*sg},cmL=Number(b.qLen)>0?Number(b.qLen)*PX_PER_CM:0,cmO=Number(b.qOff)>0?Number(b.qOff)*PX_PER_CM:0;
    // Medidas ideales: desfase = 2 veces el grosor de la barra y tramo inclinado = 3 veces el desfase.
    // El quiebre parte al 30% del largo contado desde el punto 1 (se dibuja de abajo hacia arriba) y el tramo superior se desplaza a la derecha.
-   const lw0=barWidth(b.d),off=cmO||(cmL?cmL/3:lw0*2),j=Math.min(len*.8,cmL||off*3),t0=Math.max(0,Math.min(len*.3,len-j));
+   const lw0=barLW(b),off=cmO||(cmL?cmL/3:lw0*2),j=Math.min(len*.8,cmL||off*3),t0=Math.max(0,Math.min(len*.3,len-j));
    const q=(t,k)=>({x:a.x+u.x*t+nR.x*off*k,y:a.y+u.y*t+nR.y*off*k});
    runs=[[q(0,-.5),q(t0,-.5),q(t0+j,.5),q(len,.5)]];
    anchor=q(len*.74,.5);
@@ -2125,24 +2166,68 @@ function barGeometry(s){
  for(const r of runs)for(const q of r)add(q.x,q.y);
  if(b.show!==false){
   add(anchor.x,anchor.y);add(end.x,end.y);
-  if(vertical){add(end.x-tw/2,end.y);add(end.x+tw/2,end.y);add(end.x,end.y-fs*1.3);}
+  if(b.trot===90){
+   if(vertical){add(end.x-fs*.7,end.y+out.y*(tw+fs*.6));add(end.x+fs*.7,end.y+out.y*(tw+fs*.6));}
+   else{add(end.x+out.x*fs*1.3,end.y-tw/2);add(end.x+out.x*fs*1.3,end.y+tw/2);}
+  }else if(vertical){add(end.x-tw/2,end.y);add(end.x+tw/2,end.y);add(end.x,end.y-fs*1.3);}
   else{add(end.x+out.x*(tw+fs*.4),end.y-fs*.6);add(end.x+out.x*(tw+fs*.4),end.y+fs*.6);}
  }
  return {b,runs,anchor,out,end,vertical,tw,fs,bbox};
 }
+// Textos de armadura (mallas, estribos y laterales): bloque de líneas colocado con un clic o arrastrando para orientarlo.
+PROFILE_POLYGONS.FTXT=[];
+function txLines(st){
+ const esp=Math.round(Number(st.esp))>0?'a'+Math.round(Number(st.esp)):'',L=[];
+ if(st.txKind==='malla'){
+  L.push((st.mPre||'M.H.A.')+(String(st.mE).trim()?'  e='+String(st.mE).trim():''));
+  L.push((st.mTipo||'D.M.')+' Ø'+st.d+esp);
+ }else{
+  if(st.eOn)L.push('E. Ø'+st.d+esp);
+  if(st.lOn)L.push('LAT.:'+String(st.lQty||'').trim()+'Ø'+st.lD);
+  if(!L.length)L.push('E. Ø'+st.d+esp);
+ }
+ return L;
+}
+function txSnapshot(){return {lines:txLines(barState),font:barState.font,vertical:!!barState.vertical,rot:barState.trot?90:0};}
+function txGeometry(s){
+ const t=s.tx,a=s.points[0],e=s.points[1]||a,dx=e.x-a.x,dy=e.y-a.y,fs=t.font||16,lh=fs*1.3;
+ let th=t.vertical?-Math.PI/2:0;
+ if(Math.hypot(dx,dy)>=8){th=Math.atan2(dy,dx);for(const k of [0,Math.PI/2,-Math.PI/2,Math.PI,-Math.PI])if(Math.abs(th-k)<.1){th=k;break;}}
+ if(t.rot===90)th-=Math.PI/2;
+ previewCtx.save();previewCtx.font=`${fs}px sans-serif`;
+ const w=Math.max(10,...t.lines.map(l=>previewCtx.measureText(l).width));previewCtx.restore();
+ const cs=Math.cos(th),sn=Math.sin(th),loc=[[-3,-fs],[w+3,-fs],[w+3,(t.lines.length-1)*lh+fs*.3],[-3,(t.lines.length-1)*lh+fs*.3]];
+ const pts=loc.map(([x,y])=>({x:a.x+x*cs-y*sn,y:a.y+x*sn+y*cs}));
+ const bbox={minX:Math.min(...pts.map(q=>q.x)),minY:Math.min(...pts.map(q=>q.y)),maxX:Math.max(...pts.map(q=>q.x)),maxY:Math.max(...pts.map(q=>q.y))};
+ return {t,a,th,fs,lh,bbox};
+}
+function drawTx(c,s){
+ const g=txGeometry(s);
+ c.save();c.translate(g.a.x,g.a.y);c.rotate(g.th);c.font=`${g.fs}px sans-serif`;c.fillStyle=c.strokeStyle;c.textAlign='left';c.textBaseline='alphabetic';
+ g.t.lines.forEach((l,i)=>c.fillText(l,0,i*g.lh));
+ c.restore();
+}
 function drawBar(c,s){
- const g=barGeometry(s),d=g.b.d,lw=barWidth(d);
+ const g=barGeometry(s),d=g.b.d,lw=barLW(g.b);
  c.lineWidth=lw;c.lineCap='round';c.lineJoin='round';c.setLineDash([]);
  profilePath(c,g.runs);c.stroke();
  if(g.b.show===false)return;
  const text=g.b.text||('Ø'+d);
  c.save();c.lineWidth=Math.max(1,lw*.45);
+ const rot=g.b.trot===90;
  c.beginPath();c.moveTo(g.anchor.x,g.anchor.y);c.lineTo(g.end.x,g.end.y);
- if(g.vertical){c.moveTo(g.end.x-g.tw/2,g.end.y);c.lineTo(g.end.x+g.tw/2,g.end.y);}
+ if(rot){ if(!g.vertical){c.moveTo(g.end.x,g.end.y-g.tw/2);c.lineTo(g.end.x,g.end.y+g.tw/2);} }
+ else if(g.vertical){c.moveTo(g.end.x-g.tw/2,g.end.y);c.lineTo(g.end.x+g.tw/2,g.end.y);}
  c.stroke();
  c.beginPath();c.arc(g.anchor.x,g.anchor.y,Math.max(2,lw*.9),0,Math.PI*2);c.fillStyle=c.strokeStyle;c.fill();
  c.font=`${g.fs}px sans-serif`;c.fillStyle=c.strokeStyle;
- if(g.vertical){c.textAlign='center';c.textBaseline='bottom';c.fillText(text,g.end.x,g.end.y-g.fs*.15);}
+ if(rot){
+  c.save();c.textAlign='center';
+  if(g.vertical){c.translate(g.end.x,g.end.y+g.out.y*(g.tw/2+g.fs*.3));c.rotate(-Math.PI/2);c.textBaseline='middle';}
+  else{c.translate(g.end.x+g.out.x*g.fs*.2,g.end.y);c.rotate(-Math.PI/2);c.textBaseline=g.out.x>0?'top':'bottom';}
+  c.fillText(text,0,0);c.restore();
+ }
+ else if(g.vertical){c.textAlign='center';c.textBaseline='bottom';c.fillText(text,g.end.x,g.end.y-g.fs*.15);}
  else{c.textAlign=g.out.x>0?'left':'right';c.textBaseline='middle';c.fillText(text,g.end.x+g.out.x*g.fs*.35,g.end.y);}
  c.restore();
 }
@@ -2155,6 +2240,7 @@ function dShapeRuns(s){
 }
 function profileContours(s){
  if(D_SHAPES[s.preset])return dShapeRuns(s);
+ if(s.preset==='FTXT')return [];
  if(s.preset==='FBAR'||F_SHAPES[s.preset])return barGeometry(s).runs;
  const a=s.points[0],b=s.points[1]||a,x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
  if(s.preset==='parallel-horizontal'||s.preset==='parallel-vertical'){
@@ -2167,6 +2253,7 @@ function profileContours(s){
 }
 function profilePath(c,contours){c.beginPath();for(const poly of contours){c.moveTo(poly[0].x,poly[0].y);for(const p of poly.slice(1))c.lineTo(p.x,p.y);if(poly.closed===true||(poly.closed===undefined&&poly.length>2))c.closePath();}}
 function drawProfile(c,s){
+ if(s.preset==='FTXT'){drawTx(c,s);return;}
  if(s.preset==='FBAR'||F_SHAPES[s.preset]){drawBar(c,s);return;}
  if(D_SHAPES[s.preset]){
   c.lineWidth=s.size;c.lineJoin='round';c.lineCap='round';
@@ -2187,6 +2274,7 @@ function untransformPoint(s,p){const ctr=getStrokeCenter(s),dx=p.x-ctr.x,dy=p.y-
 function objectEraseHit(s,p){
  if(!s.points?.length||s.tool==='eraser'||s.tool==='blend')return false;
  p=untransformPoint(s,p);const tolerance=Math.max(6/zoom,(s.size||3)/2+3/zoom),pts=s.points;
+ if(s.tool==='profile'&&s.preset==='FTXT'&&s.tx){const bb=txGeometry(s).bbox;return p.x>=bb.minX&&p.x<=bb.maxX&&p.y>=bb.minY&&p.y<=bb.maxY;}
  if(s.tool==='profile')return profileContours(s).some(poly=>poly.some((a,i)=>{const open=poly.closed===false||(poly.dash!==undefined&&!poly.closed);if(open&&i===poly.length-1)return false;return distanceToSegment(p,a,poly[(i+1)%poly.length])<=tolerance;}));
  if(s.tool==='pluma'&&s.nodes){const sm=plumaSamples(s);return sm.some((a,i)=>distanceToSegment(p,a,sm[i+1]||a)<=tolerance);}
  if(['pen','vector','taper','pluma','graphite','marker','highlighter','watercolor','line'].includes(s.tool))return pts.some((a,i)=>distanceToSegment(p,a,pts[i+1]||a)<=tolerance);
@@ -2210,7 +2298,7 @@ function visibleInkStrokes(list) {
   }
   const items = list.slice(start);
   const replaced = new Set(items.flatMap(s => s.erasedIds || (s.replaces ? [s.replaces] : [])));
-  return items.filter(s => !s.clear && !s.hidden && s.tool !== 'eraseObjects' && !replaced.has(s.id));
+  return items.filter(s => !s.clear && !s.edit && !s.hidden && s.tool !== 'eraseObjects' && !replaced.has(s.id));
 }
 
 function currentStrokes() { return visibleInkStrokes(history); }
@@ -2596,6 +2684,10 @@ function getStrokeBounds(s, unrotated = false) {
     return { minX: s.points[0].x - 4, minY: s.points[0].y - 4, maxX: s.points[0].x + maxW + 4, maxY: s.points[0].y + h + 4 };
   }
   if (!s.points || !s.points.length) return null;
+  if (s.tool === 'profile' && s.preset === 'FTXT' && s.tx) {
+    const bt = txGeometry(s).bbox;
+    return { minX: bt.minX - 4, minY: bt.minY - 4, maxX: bt.maxX + 4, maxY: bt.maxY + 4 };
+  }
   if (s.tool === 'profile' && (s.preset === 'FBAR' || F_SHAPES[s.preset])) {
     const bb = barGeometry(s).bbox, padB = Math.max(8, (s.size || 3) * 1.5);
     return { minX: bb.minX - padB, minY: bb.minY - padB, maxX: bb.maxX + padB, maxY: bb.maxY + padB };
@@ -2843,6 +2935,7 @@ function updateUI() {
     } else {
       $('#selectionLabel').textContent = `${selectedStrokes.length} elementos`;
     }
+    if (typeof refreshBarSel === 'function') refreshBarSel();
   } else {
     selPanel.hidden = true;
     $('#paramCopyPopover').hidden = true;
@@ -3291,6 +3384,14 @@ function appendPoint(e) {
   const p = point(e);
   if (['rect','frect','circle','ellipse','arrow','cloud','profile'].includes(active.tool)) {
     active.points[1] = p;
+    const snapDeg = Number(barState.snap) || 0;
+    if (snapDeg > 0 && active.tool === 'profile' && ((active.bar && ['recta', 'quiebre', 'ganchos'].includes(active.bar.type)) || active.tx)) {
+      const a0 = active.points[0], dx = p.x - a0.x, dy = p.y - a0.y, len = Math.hypot(dx, dy);
+      if (len > 0) {
+        const step = snapDeg * Math.PI / 180, an = Math.round(Math.atan2(dy, dx) / step) * step;
+        active.points[1] = { ...p, x: a0.x + len * Math.cos(an), y: a0.y + len * Math.sin(an) };
+      }
+    }
   } else if (active.tool === 'curve') {
     if (active.curveStep === 2) {
       active.points[2] = p;
@@ -3592,6 +3693,7 @@ ink.addEventListener('pointerdown', e => {
     tool: activeTool,
     preset: profilePreset, hatch: profileHatch, parallelCount,
     bar: profilePreset === 'FBAR' ? barSnapshot() : undefined,
+    tx: profilePreset === 'FTXT' ? txSnapshot() : undefined,
     pressure: pressureEnabled && e.pointerType === 'pen' && ['pen','graphite','marker','highlighter','watercolor'].includes(activeTool),
     sensitivity: pressureSensitivity,
     color,
@@ -4524,7 +4626,15 @@ function refreshBarUI(){
  document.querySelectorAll('#fTypes .dshape-btn').forEach(b=>b.setAttribute('aria-pressed',String(tool==='profile'&&profilePreset==='FBAR'&&barState.type===b.dataset.ftype)));
  document.querySelectorAll('#fDia .dia-btn').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.dia)===barState.d)));
  const qr=document.getElementById('fQuiebreRow');if(qr)qr.hidden=barState.type!=='quiebre';
- const pv=document.getElementById('fPreview');if(pv)pv.innerHTML='Texto: <b>'+barText(barState)+'</b> · '+F_TYPES[barState.type].name;
+ const txOn=tool==='profile'&&profilePreset==='FTXT';
+ document.querySelectorAll('#fTxtTypes .dshape-btn').forEach(b=>b.setAttribute('aria-pressed',String(txOn&&barState.txKind===b.dataset.tx)));
+ const sh=(id,v)=>{const el=document.getElementById(id);if(el)el.hidden=!v;};
+ sh('fMallaRow',txOn&&barState.txKind==='malla');sh('fEstRow',txOn&&barState.txKind==='est');sh('fTxtOpts',txOn);
+ const pv=document.getElementById('fPreview');if(pv)pv.innerHTML=txOn?'Texto: <b>'+txLines(barState).join(' &nbsp;|&nbsp; ')+'</b>':'Texto: <b>'+barText(barState)+'</b> · '+F_TYPES[barState.type].name;
+}
+function activateTx(){
+ profilePreset='FTXT';updateProfileOptions();setTool('profile');refreshBarUI();scheduleSessionSave();
+ notice('Texto: '+txLines(barState).join(' · ')+' — haz clic para colocarlo (arrastra para orientarlo)');
 }
 function activateBar(){
  profilePreset='FBAR';updateProfileOptions();setTool('profile');refreshBarUI();scheduleSessionSave();
@@ -4553,11 +4663,72 @@ function activateFShape(id){barState.d=F_SHAPES[id].d;barSave();activateBar();}
  $('#fEsp').addEventListener('input',e=>{barState.esp=e.target.value;barSave();refreshBarUI();});
  $('#fFlip').addEventListener('change',e=>{barState.flip=e.target.checked;barSave();});
  $('#fShowText').addEventListener('change',e=>{barState.show=e.target.checked;barSave();});
- $('#fFontInput').addEventListener('input',e=>{barState.font=Math.max(6,Math.min(80,Number(e.target.value)||16));barSave();});
+ $('#fFontInput').addEventListener('input',e=>{barState.font=Math.max(6,Math.min(80,Number(e.target.value)||16));barSave();
+  const sel=(typeof selectedStrokes!=='undefined'?selectedStrokes:[]).filter(t=>t.tool==='profile'&&(t.bar||t.tx));
+  if(sel.length){for(const t of sel){if(t.bar)t.bar.font=barState.font;if(t.tx)t.tx.font=barState.font;}render();scheduleSessionSave();}});
  for(const id of ['fQty','fEsp','fFontInput'])$('#'+id).addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape')e.target.blur();});
+ {
+  const tb2=$('#fTxtTypes');
+  for(const [id,label,ttl] of [['malla','Texto malla','M.H.A. e=20 / D.M. Ø8a15'],['est','Estribos / Lat.','E. Ø8a20 / LAT.:2+2Ø8']]){
+   const b=document.createElement('button');b.type='button';b.className='tool dshape-btn';b.dataset.tx=id;b.setAttribute('aria-pressed','false');
+   b.title=label+' · '+ttl;b.innerHTML='<svg viewBox="0 0 40 32" aria-hidden="true"><g fill="currentColor" stroke="none"><rect x="6" y="8" width="26" height="3" rx="1"/><rect x="6" y="15" width="20" height="3" rx="1"/><rect x="6" y="22" width="24" height="3" rx="1"/></g></svg><span class="dlabel">'+label+'</span>';
+   b.onclick=()=>{barState.txKind=id;barSave();activateTx();};tb2.appendChild(b);
+  }
+  const lsel=$('#fLD');for(const d of F_DIAMETERS){const o=document.createElement('option');o.value=d;o.textContent='Ø'+d;lsel.appendChild(o);}
+  const bind=(id,key,kind)=>{const el=$('#'+id);if(kind==='chk')el.checked=!!barState[key];else el.value=barState[key];
+   el.addEventListener(kind==='chk'||kind==='sel'?'change':'input',e=>{barState[key]=kind==='chk'?e.target.checked:(kind==='sel'?Number(e.target.value):e.target.value);barSave();refreshBarUI();});
+   if(kind==='txt')el.addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape')e.target.blur();});};
+  bind('fMPre','mPre','txt');bind('fME','mE','txt');bind('fMTipo','mTipo','txt');bind('fLQty','lQty','txt');
+  bind('fEOn','eOn','chk');bind('fLOn','lOn','chk');bind('fVert','vertical','chk');bind('fLD','lD','sel');
+  for(const id of ['fMPre','fME','fMTipo','fLQty'])$('#'+id).addEventListener('keydown',e=>e.stopPropagation());
+ }
+ // ---- Poner / cambiar / quitar el texto de barras ya dibujadas (en cualquier momento)
+ let labelMode=false;
+ window._labelOff=()=>{labelMode=false;const b=document.getElementById('fLabelMode');if(b)b.setAttribute('aria-pressed','false');};
+ const isBar=t=>t&&t.tool==='profile'&&(t.preset==='FBAR'||F_SHAPES[t.preset]);
+ const putText=t=>{if(!t.bar)t.bar=barOf(t);t.bar.text=barText(barState);t.bar.show=true;t.bar.font=barState.font;t.bar.flip=barState.flip;t.bar.trot=barState.trot?90:0;};
+ $('#fLabelMode').addEventListener('click',()=>{
+  if(labelMode){window._labelOff();return;}
+  setTool('select');labelMode=true;$('#fLabelMode').setAttribute('aria-pressed','true');
+  notice('Rotular: haz clic sobre una barra para ponerle '+barText(barState));
+ });
+ ink.addEventListener('pointerdown',e=>{
+  if(!labelMode||e.button>0)return;
+  const pt=point(e),hit=[...currentStrokes()].reverse().find(t=>isBar(t)&&objectEraseHit(t,pt));
+  e.preventDefault();e.stopImmediatePropagation();
+  if(!hit){notice('Rotular: no hay una barra ahí');return;}
+  captureEdit(hit);putText(hit);render();scheduleSessionSave();notice('Texto puesto: '+hit.bar.text);
+ },true);
+ const fontApply=(sel,f)=>{for(const t of sel){if(t.bar)t.bar.font=f;if(t.tx)t.tx.font=f;}};
+ const fontStep=d=>{const sel=selectedStrokes.filter(t=>t.tool==='profile'&&(t.bar||t.tx||isBar(t)));
+  if(sel.length){for(const t of sel){if(!t.bar&&isBar(t))t.bar=barOf(t);const cur=(t.bar?t.bar.font:t.tx.font)||16;const f=Math.max(6,Math.min(80,cur+d));if(t.bar)t.bar.font=f;if(t.tx)t.tx.font=f;}render();scheduleSessionSave();notice('Tamaño del texto: '+((sel[0].bar||sel[0].tx).font)+' px');}
+  else{barState.font=Math.max(6,Math.min(80,barState.font+d));barSave();$('#fFontInput').value=barState.font;notice('Tamaño base del texto: '+barState.font+' px');}};
+ $('#fFontMinus').addEventListener('click',()=>fontStep(-2));
+ $('#fFontPlus').addEventListener('click',()=>fontStep(2));
+ $('#fTextRot').addEventListener('click',()=>{const sel=selectedStrokes.filter(t=>t.tool==='profile'&&(t.tx||isBar(t)));
+  if(!sel.length){notice('Selecciona barras o textos (herramienta Mover) para girar su texto 90°');return;}
+  for(const t of sel){if(t.tx)t.tx.rot=t.tx.rot===90?0:90;else{if(!t.bar)t.bar=barOf(t);t.bar.trot=t.bar.trot===90?0:90;}}
+  render();scheduleSessionSave();notice('Texto girado 90°');});
+ $('#fTRot').checked=!!barState.trot;
+ $('#fTRot').addEventListener('change',e=>{barState.trot=e.target.checked?1:0;barSave();});
+ $('#fApplySel').addEventListener('click',()=>{const sel=selectedStrokes.filter(isBar);if(!sel.length){notice('Selecciona una o más barras (herramienta Mover)');return;}sel.forEach(putText);render();scheduleSessionSave();notice('Texto puesto a '+sel.length+' barra(s): '+barText(barState));});
+ $('#fRemoveSel').addEventListener('click',()=>{const sel=selectedStrokes.filter(isBar);if(!sel.length){notice('Selecciona una o más barras (herramienta Mover)');return;}sel.forEach(t=>{if(!t.bar)t.bar=barOf(t);t.bar.show=false;});render();scheduleSessionSave();notice('Texto quitado');});
  refreshBarUI();
  const upd=(k,v)=>{const sel=(typeof selectedStrokes!=='undefined'?selectedStrokes:[]).filter(t=>t.tool==='profile'&&t.bar&&t.bar.type==='quiebre');
   if(sel.length){for(const t of sel)t.bar[k]=v;render();scheduleSessionSave();}};
+ const isBarStroke=t=>t.tool==='profile'&&(t.preset==='FBAR'||F_SHAPES[t.preset]);
+ const liveBars=fn=>{const sel=(typeof selectedStrokes!=='undefined'?selectedStrokes:[]).filter(isBarStroke);if(sel.length){for(const t of sel){if(!t.bar)t.bar=barOf(t);fn(t);}render();scheduleSessionSave();}};
+ const dirAngle=t=>{const b=barOf(t);if(['recta','quiebre','ganchos'].includes(b.type)){const a=t.points[0],e=t.points[1]||a;return Math.atan2(e.y-a.y,e.x-a.x);}return 0;};
+ window.refreshBarSel=function(){const el=document.getElementById('fAng');if(!el||document.activeElement===el)return;
+  const sel=(typeof selectedStrokes!=='undefined'?selectedStrokes:[]).filter(isBarStroke);
+  if(sel.length===1){let d=-((dirAngle(sel[0])+(sel[0].angle||0))*180/Math.PI);d=((d%360)+540)%360-180;el.value=Math.round(d*10)/10;}else el.value='';};
+ $('#fAng').addEventListener('input',e=>{const v=parseFloat(e.target.value);if(!isFinite(v))return;liveBars(t=>{t.angle=-v*Math.PI/180-dirAngle(t);});});
+ $('#fAng').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape')e.target.blur();});
+ $('#fLW').value=barState.lw;
+ $('#fLW').addEventListener('input',e=>{barState.lw=e.target.value;barSave();liveBars(t=>{t.bar.lw=e.target.value;});});
+ $('#fLW').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape')e.target.blur();});
+ $('#fSnap').value=String(barState.snap||0);
+ $('#fSnap').addEventListener('change',e=>{barState.snap=Number(e.target.value)||0;barSave();});
  $('#fQSide').checked=!!barState.qFlip;
  $('#fQSide').addEventListener('change',e=>{barState.qFlip=e.target.checked;barSave();upd('qFlip',e.target.checked);});
  $('#fQLen').value=barState.qLen;$('#fQOff').value=barState.qOff;
@@ -4572,8 +4743,10 @@ function runDCommand(text){
  if(raw==='PL'||raw==='PLUMA'){$('#plumaTool').click();notice('PL · Pluma editable');return true;}
  const named=penPresets.find(p=>p.name.toUpperCase()===raw);
  if(named){applyPenPreset(named);return true;}
+ if(raw==='MALLA'||raw==='MA'){barState.txKind='malla';barSave();activateTx();return true;}
+ if(raw==='EST'||raw==='ESTRIBOS'||raw==='LAT'){barState.txKind='est';barSave();activateTx();return true;}
  const fm=raw.match(/^F\s*0*(\d+)$/);
- if(fm&&F_SHAPES['F'+fm[1]]){activateFShape('F'+fm[1]);return true;}
+ if(fm&&F_DIAMETERS.includes(Number(fm[1]))){barState.d=Number(fm[1]);barSave();activateBar();return true;}
  const m=raw.match(/^D\s*0*(\d+)$/);
  const id=m?'D'+m[1]:null;
  if(id&&D_SHAPES[id]){activateDShape(id);return true;}
@@ -4594,7 +4767,7 @@ function refreshToolOptions(){
  $('#plumaControls').hidden=tool!=='pluma';
 }
 const _setToolBase=setTool;
-setTool=function(t){_setToolBase(t);refreshDButtons();refreshToolOptions();};
+setTool=function(t){if(window._labelOff)window._labelOff();_setToolBase(t);refreshDButtons();refreshToolOptions();};
 $('#taperTool').onclick=()=>setTool('taper');
 $('#plumaTool').onclick=()=>setTool('pluma');
 $('#taperStart').oninput=e=>{taperStart=Math.max(0.5,Math.min(80,Number(e.target.value)||0.5));};
@@ -4766,22 +4939,79 @@ $('#inkOpacity').oninput = e => {
   }
 };
 
+// Deshacer de cambios sobre elementos ya dibujados (mover, girar, nodos, color, grosor, medidas, etc.).
+// Se guardan como entradas {edit:true} dentro del historial; Ctrl+Z / Ctrl+Y las recorren igual que los trazos.
+const editBase = new Map();
+const EDIT_SKIP = new Set(['canvasImage', 'fillImage', 'image', 'pointer', 'guide']);
+function strokeSnap(s) { return JSON.stringify(s, (k, v) => (EDIT_SKIP.has(k) || (typeof HTMLElement !== 'undefined' && v instanceof HTMLElement)) ? undefined : v); }
+function captureEdit(extra) {
+  for (const s of selectedStrokes) if (s && s.points && !editBase.has(s)) editBase.set(s, strokeSnap(s));
+  if (extra && extra.points && !editBase.has(extra)) editBase.set(extra, strokeSnap(extra));
+}
+let _ptrDown = 0;
+function commitEdits(force) {
+  if (!editBase.size || (_ptrDown > 0 && force !== true)) return;
+  const changes = [];
+  for (const [s, before] of editBase) {
+    const after = strokeSnap(s);
+    if (after !== before) changes.push({ id: ensureStrokeId(s), before, after });
+  }
+  editBase.clear();
+  if (!changes.length) return;
+  history.push({ id: 'edit-' + (nextStrokeId++), edit: true, changes });
+  future = [];
+  inkLayers[activeInk].future = future;
+  $('#undo').disabled = false; $('#redo').disabled = true;
+  scheduleSessionSave();
+}
+function findStrokeById(id) {
+  for (const il of inkLayers) { const f = il.strokes.find(t => t.id === id && !t.edit); if (f) return f; }
+  return null;
+}
+function applyEdit(entry, which) {
+  for (const ch of entry.changes) {
+    const st = findStrokeById(ch.id); if (!st) continue;
+    const o = JSON.parse(ch[which]);
+    for (const k of Object.keys(st)) if (!(k in o) && !EDIT_SKIP.has(k)) delete st[k];
+    Object.assign(st, o);
+  }
+}
+const _afterTick = () => setTimeout(() => commitEdits(), 0);
+document.addEventListener('pointerdown', e => {
+  _ptrDown++;
+  let extra = null;
+  if (tool === 'select' && e.target === ink) { try { const pt = point(e); extra = [...currentStrokes()].reverse().find(t => hitTestStroke(t, pt)) || null; } catch (err) { console.error("edit-capture", err); } }
+  captureEdit(extra);
+}, true);
+for (const ev of ['pointerup', 'pointercancel']) document.addEventListener(ev, () => { _ptrDown = Math.max(0, _ptrDown - 1); }, true);
+for (const ev of ['pointerup', 'pointercancel', 'change', 'keyup', 'focusout', 'click']) document.addEventListener(ev, _afterTick, true);
+document.addEventListener('keydown', e => { if (selectedStrokes.length && !((e.ctrlKey || e.metaKey) && ['z', 'y'].includes((e.key || '').toLowerCase()))) captureEdit(); }, true);
+document.addEventListener('focusin', () => captureEdit(), true);
+
 function undo() {
   finish();
+  commitEdits(true);
   selectedStrokes = [];
   selectedStroke = null;
+  editBase.clear();
   if (history.length) {
-    future.push(history.pop());
+    const e = history.pop();
+    future.push(e);
+    if (e.edit) applyEdit(e, 'before');
     render();
   }
 }
 
 function redo() {
   finish();
+  commitEdits(true);
   selectedStrokes = [];
   selectedStroke = null;
+  editBase.clear();
   if (future.length) {
-    history.push(future.pop());
+    const e = future.pop();
+    if (e.edit) applyEdit(e, 'after');
+    history.push(e);
     render();
   }
 }
@@ -5335,7 +5565,7 @@ async function restoreSession(data) {
     return {...l,image:await decodeSessionImage(l.image),pdf:l.pdfId===null?null:pdfs[l.pdfId]};
   }));
   const decodeStroke=async s=>{
-    if(!s||typeof s.tool!=='string'&&!s.clear||!Array.isArray(s.points)&&!s.clear)throw Error('Trazo no válido.');
+    if(!s||typeof s.tool!=='string'&&!s.clear&&!s.edit&&!s.hidden||!Array.isArray(s.points)&&!s.clear&&!s.edit&&!s.hidden)throw Error('Trazo no válido.');
     const copy={...s};delete copy.fillImage;
     if(s.fillImage) {
       const im=await decodeSessionImage(s.fillImage),cv=document.createElement('canvas');cv.width=im.width;cv.height=im.height;

@@ -48,3 +48,34 @@ Pestaña **Ø Barras F**. Eliges el tipo de barra, la cantidad, el diámetro y (
 - La selección se guarda en el navegador. Cada barra conserva el texto con que se dibujó. Se mueven, giran y borran por objeto como el resto de las figuras.
 
 **Quiebre:** se dibuja pensando en barras de abajo hacia arriba (punto 1 abajo, punto 2 arriba). El quiebre parte al 30% del largo desde el punto 1 y el tramo superior se desplaza a la derecha (*Quiebre al otro lado* lo cambia). Medidas ideales por defecto: desfase = 2 veces el grosor de la barra y tramo inclinado = 3 veces el desfase. Para fijar medidas propias usa **Quiebre largo** (tramo inclinado) y **Quiebre ancho** (desfase), en cm; vacío = medida ideal. Para cambiar un quiebre ya dibujado: selecciónalo con Mover, ve a *Barras F* y cambia los valores.
+
+## Más diámetros y textos de armadura
+
+**Diámetros:** Ø8, Ø10, Ø12, Ø16, Ø18, Ø22, Ø25, Ø28 y Ø32 (comando `F22`, `F25`, etc.).
+
+**Textos de malla, estribos y laterales** (pestaña *Barras F*, debajo de las barras): se colocan con un clic; si arrastras, el texto se orienta en esa dirección (se alinea solo a horizontal/vertical). *Vertical* lo deja de abajo hacia arriba con un solo clic. Usan el color y el tamaño del panel.
+
+- **Texto malla** (comando `MALLA`): `M.H.A.  e=20` y `D.M. Ø8a15`. Editas el código (M.H.A., M.H.B., M.V.A.… o el que quieras), el espesor *e* y el tipo (D.M., S.M.). El Ø y el «a» salen de los botones de diámetro y del campo «a» de arriba.
+- **Estribos / Lat.** (comandos `EST`, `LAT`): `E. Ø8a20` y `LAT.:2+2Ø8`. Puedes activar solo estribos o solo laterales, y el diámetro de los laterales es independiente.
+- Se mueven, giran y borran por objeto como el resto de las figuras.
+
+## Grosor, ángulo y deshacer
+
+- **Grosor** (pestaña *Barras F*): grosor de la línea de la barra en px; vacío = según el diámetro. Si hay una barra seleccionada, la cambia al instante. El **Tamaño** del texto también actualiza las barras y textos seleccionados.
+- **Ángulo al dibujar**: Libre, Ortogonal (0°/90°), pasos de 45° o de 15°. Se aplica a barras rectas/quiebre y a los textos de malla/estribos cuando arrastras.
+- **Girar a (°)**: con una barra seleccionada muestra su ángulo (antihorario, como en CAD); escribe un valor para girarla.
+- **Ctrl+Z / Ctrl+Y** ahora deshacen y rehacen también los cambios sobre elementos ya dibujados: mover, girar, reflejar, editar nodos de la pluma, color, grosor, opacidad, medidas del quiebre, etc. (cada gesto es un paso). Antes solo quitaban el último trazo.
+- Corregido: una sesión guardada después de borrar un objeto con el botón de eliminar ya se puede volver a abrir.
+
+## Poner el texto a las barras en cualquier momento
+
+Puedes dibujar las barras sin texto (apaga *Con texto*) y rotularlas después, o cambiarles el texto cuando quieras. Se usa la cantidad, el Ø y el «a» que estén en el panel *Barras F* en ese momento.
+
+- **🏷 Rotular barra (clic):** haz clic sobre cada barra para ponerle o cambiarle el texto. Se desactiva al elegir otra herramienta.
+- **Texto a selección:** pone el texto a las barras que tengas seleccionadas con Mover.
+- **Quitar texto:** oculta el texto de las barras seleccionadas.
+- Todo se puede deshacer con Ctrl+Z.
+
+## Tamaño y giro del texto
+
+En *Barras F*: **A−** / **A+** cambian el tamaño del texto (2 px por toque) en las barras y textos seleccionados; sin selección cambian el tamaño base. **↻ Texto 90°** gira el texto 90° en lo seleccionado (otro toque lo devuelve). **Nuevos a 90°** hace que los textos nuevos salgan girados. Sirve para textos de barras y para los de malla, estribos y laterales. Todo se deshace con Ctrl+Z.
