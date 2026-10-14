@@ -1318,6 +1318,7 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
       <button type="button" class="cat-btn active" data-target="panelBrush">✎ Lápices y pinceles</button>
       <button type="button" class="cat-btn" data-target="panelDraw">▱ Figuras y texto</button>
       <button type="button" class="cat-btn" data-target="panelD">⌐ Figuras D</button>
+      <button type="button" class="cat-btn" data-target="panelF">Ø Barras F</button>
       <button type="button" class="cat-btn" data-target="panelP">★ Mis lápices</button>
       <button type="button" class="cat-btn" data-target="panelEdit">✂️ Edición</button>
       <button type="button" class="cat-btn" data-target="panelSheet">📄 Hoja</button>
@@ -1437,6 +1438,33 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <input id="dCommandInput" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="D1…D11 ↵" aria-label="Comando de figura D">
       </label>
       <span class="dhint">Arrastra del punto <b>1</b> al punto <b>2</b>; la figura se estira como un rectángulo.</span>
+    </div>
+
+    <!-- PANEL BARRAS F: tipo de barra + cantidad + diámetro + espaciamiento, con texto y línea de referencia -->
+    <div id="panelF" class="panel-section dpanel" hidden aria-label="Barras F">
+      <div class="group" id="fTypes" role="group" aria-label="Tipo de barra"></div>
+      <div class="sep"></div>
+      <div class="group fbar-row" role="group" aria-label="Cantidad, diámetro y espaciamiento">
+        <label class="dcmd" title="Cantidad de barras (opcional)"><span>Cant.</span>
+          <input id="fQty" type="number" min="1" max="99" step="1" inputmode="numeric" placeholder="—" aria-label="Cantidad" style="width:56px"></label>
+        <div class="group" id="fDia" role="group" aria-label="Diámetro"></div>
+        <label class="dcmd" title="Espaciamiento en cm (opcional). Ej.: 20 → «a 20»"><span>a</span>
+          <input id="fEsp" type="number" min="1" max="200" step="1" inputmode="numeric" placeholder="—" aria-label="Espaciamiento" style="width:56px"></label>
+      </div>
+      <div class="group fbar-row" role="group" aria-label="Opciones del texto">
+        <label class="dcmd" title="Mostrar texto y línea de referencia"><span>Con texto</span><input id="fShowText" type="checkbox" checked aria-label="Mostrar texto"></label>
+        <label class="dcmd" title="Pasar el texto al lado contrario de la barra"><span>Invertir lado</span><input id="fFlip" type="checkbox" aria-label="Invertir lado del texto"></label>
+        <label class="dcmd" title="Tamaño del texto en px"><span>Tamaño</span><input id="fFontInput" type="number" min="6" max="80" step="1" value="16" aria-label="Tamaño del texto" style="width:60px"></label>
+      </div>
+      <div class="group fbar-row" id="fQuiebreRow" role="group" aria-label="Medidas del quiebre" hidden>
+        <label class="dcmd" title="Largo del tramo diagonal del quiebre, a lo largo de la barra, en cm. Vacío = medida ideal"><span>Quiebre largo</span>
+          <input id="fQLen" type="number" min="0.2" max="200" step="0.1" inputmode="decimal" placeholder="ideal" aria-label="Largo del quiebre en cm" style="width:68px"><span>cm</span></label>
+        <label class="dcmd" title="Ancho (desfase lateral) del quiebre en cm. Vacío = medida ideal"><span>Quiebre ancho</span>
+          <input id="fQOff" type="number" min="0.1" max="100" step="0.1" inputmode="decimal" placeholder="ideal" aria-label="Ancho del quiebre en cm" style="width:68px"><span>cm</span></label>
+        <label class="dcmd" title="Desplazar el quiebre hacia el otro lado"><span>Quiebre al otro lado</span><input id="fQSide" type="checkbox" aria-label="Quiebre al otro lado"></label>
+      </div>
+      <span class="dhint" id="fPreview"></span>
+      <span class="dhint">Arrastra del punto <b>1</b> al punto <b>2</b>. El texto sale con su línea de referencia (ej. <b>2Ø12 a 20</b>). Comando: <b>F12</b>.</span>
     </div>
 
     <!-- PANEL MIS LÁPICES: colores y lápices guardados con nombre -->
@@ -2028,6 +2056,96 @@ const D_SHAPES={
  D11:{name:'Dos verticales',runs:[{c:'AD'},{c:'BC'}]}
 };
 for(const k of Object.keys(D_SHAPES))PROFILE_POLYGONS[k]=[];
+// Barras F: tipos de barra x diámetro. Se dibuja una forma elástica (P1→P2) con texto y línea de referencia.
+const F_SHAPES={F8:{d:8},F10:{d:10},F12:{d:12},F16:{d:16}}; // compatibilidad con versiones anteriores
+const F_DIAMETERS=[8,10,12,16];
+const F_TYPES={
+ recta:{name:'Recta'},
+ quiebre:{name:'Recta con quiebre'},
+ uarriba:{name:'U abierta arriba'},
+ uabajo:{name:'U abierta abajo'},
+ ele:{name:'L'},
+ cizq:{name:'Abierta a la izquierda'},
+ estribo:{name:'Estribo cerrado'}
+};
+PROFILE_POLYGONS.FBAR=[];
+for(const k of Object.keys(F_SHAPES))PROFILE_POLYGONS[k]=[];
+const barWidth=d=>Math.max(1.5,d/3.5);
+const barState={type:'recta',d:12,qty:'',esp:'',flip:false,font:16,show:true,qLen:'',qOff:'',qFlip:false};
+try{Object.assign(barState,JSON.parse(localStorage.getItem('cuaderno-bar-v2')||'{}'));}catch(e){}
+if(!F_TYPES[barState.type])barState.type='recta';
+if(!F_DIAMETERS.includes(Number(barState.d)))barState.d=12;
+barState.d=Number(barState.d);barState.font=Math.max(6,Math.min(80,Number(barState.font)||16));
+function barSave(){try{localStorage.setItem('cuaderno-bar-v2',JSON.stringify(barState));}catch(e){}}
+function barText(st){const q=Math.round(Number(st.qty)),e=Math.round(Number(st.esp));return (q>0?q:'')+'Ø'+st.d+(e>0?' a '+e:'');}
+function barSnapshot(){return {type:barState.type,d:barState.d,text:barText(barState),font:barState.font,show:barState.show,flip:barState.flip,qLen:barState.qLen,qOff:barState.qOff,qFlip:barState.qFlip};}
+function barOf(s){
+ if(s.bar)return s.bar;
+ const f=F_SHAPES[s.preset];
+ return {type:'recta',d:f.d,text:s.barText||('Ø'+f.d),font:s.barFont||16,show:s.barShow!==false,flip:false};
+}
+// Geometría: tramos de la barra, ancla de la referencia y dirección hacia afuera.
+function barGeometry(s){
+ const b=barOf(s),a=s.points[0],e=s.points[1]||a;
+ const P={A:{x:a.x,y:a.y},B:{x:e.x,y:a.y},C:{x:e.x,y:e.y},D:{x:a.x,y:e.y}};
+ const mid=(p,q)=>({x:(p.x+q.x)/2,y:(p.y+q.y)/2});
+ const cx=(a.x+e.x)/2,cy=(a.y+e.y)/2;
+ let runs,anchor,out;
+ const away=pt=>{const dx=pt.x-cx,dy=pt.y-cy;return Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx)||1,y:0}:{x:0,y:Math.sign(dy)||-1};};
+ if(b.type==='recta'||b.type==='ganchos'||b.type==='quiebre'){
+  const dx=e.x-a.x,dy=e.y-a.y,len=Math.hypot(dx,dy)||1,u={x:dx/len,y:dy/len};
+  runs=[[{x:a.x,y:a.y},{x:e.x,y:e.y}]];
+  if(b.type==='ganchos'){const L=Math.max(10,Math.min(60,len*.15)),n={x:-u.y*L,y:u.x*L};runs=[[{x:a.x+n.x,y:a.y+n.y},{x:a.x,y:a.y},{x:e.x,y:e.y},{x:e.x-n.x,y:e.y-n.y}]];}
+  anchor=mid(a,e);out=Math.abs(dx)>=Math.abs(dy)?{x:0,y:-1}:{x:-1,y:0};
+  if(b.type==='quiebre'){
+   // dos tramos paralelos unidos por un tramo diagonal corto (desfase), como una barra con quiebre
+   const sg=b.qFlip?-1:1,nR={x:-u.y*sg,y:u.x*sg},cmL=Number(b.qLen)>0?Number(b.qLen)*PX_PER_CM:0,cmO=Number(b.qOff)>0?Number(b.qOff)*PX_PER_CM:0;
+   // Medidas ideales: desfase = 2 veces el grosor de la barra y tramo inclinado = 3 veces el desfase.
+   // El quiebre parte al 30% del largo contado desde el punto 1 (se dibuja de abajo hacia arriba) y el tramo superior se desplaza a la derecha.
+   const lw0=barWidth(b.d),off=cmO||(cmL?cmL/3:lw0*2),j=Math.min(len*.8,cmL||off*3),t0=Math.max(0,Math.min(len*.3,len-j));
+   const q=(t,k)=>({x:a.x+u.x*t+nR.x*off*k,y:a.y+u.y*t+nR.y*off*k});
+   runs=[[q(0,-.5),q(t0,-.5),q(t0+j,.5),q(len,.5)]];
+   anchor=q(len*.74,.5);
+  }
+  for(const r of runs)r.closed=false;
+ }else{
+  const spec={uarriba:['ADCB','DC'],uabajo:['DABC','AB'],ele:['ADC',null],cizq:['ABCD','BC'],estribo:['ABCDA','AB']}[b.type];
+  const letters=spec[0],closed=letters.length>2&&letters[0]===letters.at(-1),pts=[...(closed?letters.slice(0,-1):letters)].map(l=>P[l]);
+  pts.closed=closed;runs=[pts];
+  let pair=spec[1];
+  if(!pair){const ad=Math.abs(e.y-a.y),dc=Math.abs(e.x-a.x);pair=ad>=dc?'AD':'DC';}
+  anchor=mid(P[pair[0]],P[pair[1]]);out=away(anchor);
+ }
+ if(b.flip)out={x:-out.x,y:-out.y};
+ const fs=b.font||16,tw=Math.max(1,(b.text||'').length)*fs*.58+fs*.8,lead=fs*2.4;
+ const end={x:anchor.x+out.x*lead,y:anchor.y+out.y*lead};
+ const vertical=out.y!==0;
+ let bbox={minX:Infinity,minY:Infinity,maxX:-Infinity,maxY:-Infinity};
+ const add=(x,y)=>{bbox.minX=Math.min(bbox.minX,x);bbox.minY=Math.min(bbox.minY,y);bbox.maxX=Math.max(bbox.maxX,x);bbox.maxY=Math.max(bbox.maxY,y);};
+ for(const r of runs)for(const q of r)add(q.x,q.y);
+ if(b.show!==false){
+  add(anchor.x,anchor.y);add(end.x,end.y);
+  if(vertical){add(end.x-tw/2,end.y);add(end.x+tw/2,end.y);add(end.x,end.y-fs*1.3);}
+  else{add(end.x+out.x*(tw+fs*.4),end.y-fs*.6);add(end.x+out.x*(tw+fs*.4),end.y+fs*.6);}
+ }
+ return {b,runs,anchor,out,end,vertical,tw,fs,bbox};
+}
+function drawBar(c,s){
+ const g=barGeometry(s),d=g.b.d,lw=barWidth(d);
+ c.lineWidth=lw;c.lineCap='round';c.lineJoin='round';c.setLineDash([]);
+ profilePath(c,g.runs);c.stroke();
+ if(g.b.show===false)return;
+ const text=g.b.text||('Ø'+d);
+ c.save();c.lineWidth=Math.max(1,lw*.45);
+ c.beginPath();c.moveTo(g.anchor.x,g.anchor.y);c.lineTo(g.end.x,g.end.y);
+ if(g.vertical){c.moveTo(g.end.x-g.tw/2,g.end.y);c.lineTo(g.end.x+g.tw/2,g.end.y);}
+ c.stroke();
+ c.beginPath();c.arc(g.anchor.x,g.anchor.y,Math.max(2,lw*.9),0,Math.PI*2);c.fillStyle=c.strokeStyle;c.fill();
+ c.font=`${g.fs}px sans-serif`;c.fillStyle=c.strokeStyle;
+ if(g.vertical){c.textAlign='center';c.textBaseline='bottom';c.fillText(text,g.end.x,g.end.y-g.fs*.15);}
+ else{c.textAlign=g.out.x>0?'left':'right';c.textBaseline='middle';c.fillText(text,g.end.x+g.out.x*g.fs*.35,g.end.y);}
+ c.restore();
+}
 function dShapeRuns(s){
  const a=s.points[0],b=s.points[1]||a,P={A:{x:a.x,y:a.y},B:{x:b.x,y:a.y},C:{x:b.x,y:b.y},D:{x:a.x,y:b.y}};
  return D_SHAPES[s.preset].runs.map(r=>{
@@ -2037,6 +2155,7 @@ function dShapeRuns(s){
 }
 function profileContours(s){
  if(D_SHAPES[s.preset])return dShapeRuns(s);
+ if(s.preset==='FBAR'||F_SHAPES[s.preset])return barGeometry(s).runs;
  const a=s.points[0],b=s.points[1]||a,x=Math.min(a.x,b.x),y=Math.min(a.y,b.y),w=Math.abs(b.x-a.x),h=Math.abs(b.y-a.y);
  if(s.preset==='parallel-horizontal'||s.preset==='parallel-vertical'){
   const count=Math.max(2,Math.min(20,Math.round(Number(s.parallelCount)||2)));
@@ -2048,6 +2167,7 @@ function profileContours(s){
 }
 function profilePath(c,contours){c.beginPath();for(const poly of contours){c.moveTo(poly[0].x,poly[0].y);for(const p of poly.slice(1))c.lineTo(p.x,p.y);if(poly.closed===true||(poly.closed===undefined&&poly.length>2))c.closePath();}}
 function drawProfile(c,s){
+ if(s.preset==='FBAR'||F_SHAPES[s.preset]){drawBar(c,s);return;}
  if(D_SHAPES[s.preset]){
   c.lineWidth=s.size;c.lineJoin='round';c.lineCap='round';
   for(const poly of profileContours(s)){
@@ -2368,7 +2488,7 @@ function stroke(c, s) {
   } else if (s.tool === 'text') {
     drawRichText(c, s);
   } else if (s.tool === 'fill' && s.canvasImage) {
-    c.drawImage(s.canvasImage, 0, 0);
+    if (s.canvasImage.width > 0 && s.canvasImage.height > 0) c.drawImage(s.canvasImage, 0, 0);
   } else if (s.tool === 'frect') {
     // Rectángulo relleno: sin borde; el color es el de la tinta y la opacidad la de s.opacity.
     const a = s.points[0], b = s.points[1] || a;
@@ -2476,6 +2596,10 @@ function getStrokeBounds(s, unrotated = false) {
     return { minX: s.points[0].x - 4, minY: s.points[0].y - 4, maxX: s.points[0].x + maxW + 4, maxY: s.points[0].y + h + 4 };
   }
   if (!s.points || !s.points.length) return null;
+  if (s.tool === 'profile' && (s.preset === 'FBAR' || F_SHAPES[s.preset])) {
+    const bb = barGeometry(s).bbox, padB = Math.max(8, (s.size || 3) * 1.5);
+    return { minX: bb.minX - padB, minY: bb.minY - padB, maxX: bb.maxX + padB, maxY: bb.maxY + padB };
+  }
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const p of s.points) {
     minX = Math.min(minX, p.x);
@@ -2626,6 +2750,8 @@ function drawPreview() {
 // mezclador solo afectan la capa en la que trabajas (antes borraban también las capas de abajo).
 const inkLayerPool = document.createElement('canvas');
 function drawInkLayer(target, il, pxW, pxH, setup, extra) {
+  pxW = Math.floor(pxW); pxH = Math.floor(pxH);
+  if (!(pxW > 0 && pxH > 0)) return; // lienzo sin tamaño (ventana minimizada/oculta): no hay nada que dibujar
   if (inkLayerPool.width !== pxW || inkLayerPool.height !== pxH) { inkLayerPool.width = pxW; inkLayerPool.height = pxH; }
   const l = inkLayerPool.getContext('2d');
   l.setTransform(1, 0, 0, 1, 0, 0);
@@ -2645,6 +2771,7 @@ function drawInkLayer(target, il, pxW, pxH, setup, extra) {
 
 function render() {
   const r = paper.getBoundingClientRect();
+  if (!(r.width > 0 && r.height > 0) || !ink.width || !ink.height) return;
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, r.width, r.height);
 
@@ -2833,7 +2960,7 @@ document.querySelectorAll('.cat-btn').forEach(btn => {
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     const target = btn.dataset.target;
-    const sections = ['panelBrush', 'panelDraw', 'panelD', 'panelP', 'panelEdit', 'panelSheet'];
+    const sections = ['panelBrush', 'panelDraw', 'panelD', 'panelF', 'panelP', 'panelEdit', 'panelSheet'];
 
     if (target === 'panelAll') {
       sections.forEach(id => {
@@ -3464,6 +3591,7 @@ ink.addEventListener('pointerdown', e => {
     id: 'elem-' + (nextStrokeId++),
     tool: activeTool,
     preset: profilePreset, hatch: profileHatch, parallelCount,
+    bar: profilePreset === 'FBAR' ? barSnapshot() : undefined,
     pressure: pressureEnabled && e.pointerType === 'pen' && ['pen','graphite','marker','highlighter','watercolor'].includes(activeTool),
     sensitivity: pressureSensitivity,
     color,
@@ -4219,7 +4347,7 @@ if (toolCopyQuickBtn) {
           const cvCopy = document.createElement('canvas');
           cvCopy.width = dup.canvasImage.width;
           cvCopy.height = dup.canvasImage.height;
-          cvCopy.getContext('2d').drawImage(dup.canvasImage, 25, 25);
+          if (dup.canvasImage.width > 0 && dup.canvasImage.height > 0) cvCopy.getContext('2d').drawImage(dup.canvasImage, 25, 25);
           dup.canvasImage = cvCopy;
         }
         return dup;
@@ -4270,7 +4398,7 @@ function mirrorGroupStrokes(strokes, axis = 'h', makeCopy = false) {
         cv.width = target.canvasImage.width; cv.height = target.canvasImage.height;
         const cvc = cv.getContext('2d');
         cvc.translate(cv.width, 0); cvc.scale(-1, 1);
-        cvc.drawImage(target.canvasImage, 0, 0);
+        if (target.canvasImage.width > 0 && target.canvasImage.height > 0) cvc.drawImage(target.canvasImage, 0, 0);
         target.canvasImage = cv;
       }
     } else if (axis === 'v') {
@@ -4289,7 +4417,7 @@ function mirrorGroupStrokes(strokes, axis = 'h', makeCopy = false) {
         cv.width = target.canvasImage.width; cv.height = target.canvasImage.height;
         const cvc = cv.getContext('2d');
         cvc.translate(0, cv.height); cvc.scale(1, -1);
-        cvc.drawImage(target.canvasImage, 0, 0);
+        if (target.canvasImage.width > 0 && target.canvasImage.height > 0) cvc.drawImage(target.canvasImage, 0, 0);
         target.canvasImage = cv;
       }
     }
@@ -4357,6 +4485,7 @@ function dIcon(id){
 }
 function refreshDButtons(){
  document.querySelectorAll('.dshape-btn[data-d]').forEach(b=>b.setAttribute('aria-pressed',String(tool==='profile'&&profilePreset===b.dataset.d)));
+ if(typeof refreshBarUI==='function')refreshBarUI();
  document.getElementById('dFillBtn')?.setAttribute('aria-pressed',String(tool==='frect'));
 }
 function activateDShape(id){
@@ -4378,6 +4507,64 @@ for(const id of Object.keys(D_SHAPES)){
  b.innerHTML='<svg viewBox="0 0 40 32" aria-hidden="true"><rect x="6" y="6" width="28" height="18" fill="currentColor" fill-opacity=".45" stroke="none"/></svg><span class="dlabel">RR</span>';
  b.onclick=()=>$('#fillRectTool').click();dBox.appendChild(b);
 }
+function fTypeIcon(t){
+ const k='stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+ const shapes={
+  recta:'<path d="M6,22 L34,10"/>',
+  quiebre:'<path d="M17,4 L17,13 L23,19 L23,28"/>',
+  uarriba:'<path d="M8,8 L8,24 L32,24 L32,8"/>',
+  uabajo:'<path d="M8,24 L8,8 L32,8 L32,24"/>',
+  ele:'<path d="M8,8 L8,24 L32,24"/>',
+  cizq:'<path d="M8,8 L32,8 L32,24 L8,24"/>',
+  estribo:'<path d="M8,8 L32,8 L32,24 L8,24 Z"/>'
+ };
+ return `<svg viewBox="0 0 40 32" aria-hidden="true"><g ${k}>${shapes[t]}</g></svg>`;
+}
+function refreshBarUI(){
+ document.querySelectorAll('#fTypes .dshape-btn').forEach(b=>b.setAttribute('aria-pressed',String(tool==='profile'&&profilePreset==='FBAR'&&barState.type===b.dataset.ftype)));
+ document.querySelectorAll('#fDia .dia-btn').forEach(b=>b.setAttribute('aria-pressed',String(Number(b.dataset.dia)===barState.d)));
+ const qr=document.getElementById('fQuiebreRow');if(qr)qr.hidden=barState.type!=='quiebre';
+ const pv=document.getElementById('fPreview');if(pv)pv.innerHTML='Texto: <b>'+barText(barState)+'</b> · '+F_TYPES[barState.type].name;
+}
+function activateBar(){
+ profilePreset='FBAR';updateProfileOptions();setTool('profile');refreshBarUI();scheduleSessionSave();
+ notice(F_TYPES[barState.type].name+' · '+barText(barState)+': arrastra del punto 1 al punto 2');
+}
+function activateFShape(id){barState.d=F_SHAPES[id].d;barSave();activateBar();}
+{
+ const tb=$('#fTypes');
+ for(const id of Object.keys(F_TYPES)){
+  const b=document.createElement('button');
+  b.type='button';b.className='tool dshape-btn';b.dataset.ftype=id;b.setAttribute('aria-pressed','false');
+  b.title=F_TYPES[id].name;b.setAttribute('aria-label',b.title);
+  b.innerHTML=fTypeIcon(id)+'<span class="dlabel">'+F_TYPES[id].name.replace('abierta ','').replace('Recta con quiebre','Quiebre').replace('Abierta a la izquierda','Abierta ⊐').replace('Estribo cerrado','Estribo')+'</span>';
+  b.onclick=()=>{barState.type=id;barSave();activateBar();};tb.appendChild(b);
+ }
+ const db=$('#fDia');
+ for(const d of F_DIAMETERS){
+  const b=document.createElement('button');
+  b.type='button';b.className='tool dia-btn';b.dataset.dia=d;b.setAttribute('aria-pressed','false');
+  b.title='Diámetro Ø'+d;b.textContent='Ø'+d;
+  b.onclick=()=>{barState.d=d;barSave();activateBar();};db.appendChild(b);
+ }
+ $('#fQty').value=barState.qty;$('#fEsp').value=barState.esp;$('#fFlip').checked=!!barState.flip;
+ $('#fShowText').checked=barState.show!==false;$('#fFontInput').value=barState.font;
+ $('#fQty').addEventListener('input',e=>{barState.qty=e.target.value;barSave();refreshBarUI();});
+ $('#fEsp').addEventListener('input',e=>{barState.esp=e.target.value;barSave();refreshBarUI();});
+ $('#fFlip').addEventListener('change',e=>{barState.flip=e.target.checked;barSave();});
+ $('#fShowText').addEventListener('change',e=>{barState.show=e.target.checked;barSave();});
+ $('#fFontInput').addEventListener('input',e=>{barState.font=Math.max(6,Math.min(80,Number(e.target.value)||16));barSave();});
+ for(const id of ['fQty','fEsp','fFontInput'])$('#'+id).addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape')e.target.blur();});
+ refreshBarUI();
+ const upd=(k,v)=>{const sel=(typeof selectedStrokes!=='undefined'?selectedStrokes:[]).filter(t=>t.tool==='profile'&&t.bar&&t.bar.type==='quiebre');
+  if(sel.length){for(const t of sel)t.bar[k]=v;render();scheduleSessionSave();}};
+ $('#fQSide').checked=!!barState.qFlip;
+ $('#fQSide').addEventListener('change',e=>{barState.qFlip=e.target.checked;barSave();upd('qFlip',e.target.checked);});
+ $('#fQLen').value=barState.qLen;$('#fQOff').value=barState.qOff;
+ $('#fQLen').addEventListener('input',e=>{barState.qLen=e.target.value;barSave();upd('qLen',e.target.value);});
+ $('#fQOff').addEventListener('input',e=>{barState.qOff=e.target.value;barSave();upd('qOff',e.target.value);});
+ for(const id of ['fQLen','fQOff'])$('#'+id).addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'||e.key==='Escape')e.target.blur();});
+}
 function runDCommand(text){
  const raw=String(text).trim().toUpperCase();
  if(raw==='RR'||raw==='RELLENO'){$('#fillRectTool').click();notice('RR · Rectángulo relleno: arrastra del punto 1 al punto 2');return true;}
@@ -4385,10 +4572,12 @@ function runDCommand(text){
  if(raw==='PL'||raw==='PLUMA'){$('#plumaTool').click();notice('PL · Pluma editable');return true;}
  const named=penPresets.find(p=>p.name.toUpperCase()===raw);
  if(named){applyPenPreset(named);return true;}
+ const fm=raw.match(/^F\s*0*(\d+)$/);
+ if(fm&&F_SHAPES['F'+fm[1]]){activateFShape('F'+fm[1]);return true;}
  const m=raw.match(/^D\s*0*(\d+)$/);
  const id=m?'D'+m[1]:null;
  if(id&&D_SHAPES[id]){activateDShape(id);return true;}
- notice('Comando no reconocido: '+(text||'(vacío)')+'. Disponibles: '+Object.keys(D_SHAPES).join(', ')+', RR, LV, PL o el nombre de un lápiz guardado');
+ notice('Comando no reconocido: '+(text||'(vacío)')+'. Disponibles: '+Object.keys(D_SHAPES).concat(Object.keys(F_SHAPES)).join(', ')+', RR, LV, PL o el nombre de un lápiz guardado');
  return false;
 }
 $('#dCommandInput').addEventListener('keydown',e=>{
@@ -4646,7 +4835,7 @@ function scaleSelectedGroup(factor) {
       newCv.width = Math.max(10, Math.round(oldCv.width * factor));
       newCv.height = Math.max(10, Math.round(oldCv.height * factor));
       const nCtx = newCv.getContext('2d');
-      nCtx.drawImage(oldCv, 0, 0, newCv.width, newCv.height);
+      if (oldCv.width > 0 && oldCv.height > 0) nCtx.drawImage(oldCv, 0, 0, newCv.width, newCv.height);
       s.canvasImage = newCv;
     }
   }
@@ -4761,7 +4950,7 @@ $('#btnExecuteParamCopy').onclick = () => {
         cvCopy.width = copyStroke.canvasImage.width;
         cvCopy.height = copyStroke.canvasImage.height;
         const cvc = cvCopy.getContext('2d');
-        cvc.drawImage(copyStroke.canvasImage, kx, ky);
+        if (copyStroke.canvasImage.width > 0 && copyStroke.canvasImage.height > 0) cvc.drawImage(copyStroke.canvasImage, kx, ky);
         copyStroke.canvasImage = cvCopy;
       }
 

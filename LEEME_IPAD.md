@@ -36,3 +36,15 @@ Botón **▮ Relleno** (pestaña Figuras y texto), **Mayús+R** o el comando `RR
 **✒ Pluma** (Mayús+P, comando `PL`): dibuja a mano alzada; el trazo queda con nodos suavizados (control *Suavizado*). Con **Mover** selecciona el trazo: arrastra los nodos para corregirlo, doble clic/toque sobre la curva agrega un nodo y doble clic sobre un nodo lo elimina.
 
 Notas: los colores y lápices se guardan en este navegador/dispositivo (no viajan en el archivo de sesión). Los cambios de nodos no se deshacen con Ctrl+Z.
+
+## Panel Ø Barras F
+
+Pestaña **Ø Barras F**. Eliges el tipo de barra, la cantidad, el diámetro y (opcional) el espaciamiento; luego arrastras del punto 1 al punto 2, igual que las figuras D.
+
+- **Tipos**: Recta, Recta con quiebre (dos tramos paralelos unidos por un tramo diagonal), U abierta arriba, U abierta abajo, L, Abierta a la izquierda y Estribo cerrado.
+- **Cant.** (opcional), **Ø8 / Ø10 / Ø12 / Ø16** y **a** espaciamiento en cm (opcional). Ejemplos de texto: `Ø12`, `2Ø12`, `2Ø16 a 20`. La línea «Texto:» del panel muestra cómo va a quedar.
+- El texto sale con su **línea de referencia** (punto sobre la barra, línea hacia afuera y texto sobre una base). **Invertir lado** lo pasa al otro lado; **Con texto** lo apaga; **Tamaño** cambia el texto.
+- Comando: `F8`, `F10`, `F12`, `F16` (Enter, escribir, Enter) cambia el diámetro y activa la herramienta con el último tipo usado.
+- La selección se guarda en el navegador. Cada barra conserva el texto con que se dibujó. Se mueven, giran y borran por objeto como el resto de las figuras.
+
+**Quiebre:** se dibuja pensando en barras de abajo hacia arriba (punto 1 abajo, punto 2 arriba). El quiebre parte al 30% del largo desde el punto 1 y el tramo superior se desplaza a la derecha (*Quiebre al otro lado* lo cambia). Medidas ideales por defecto: desfase = 2 veces el grosor de la barra y tramo inclinado = 3 veces el desfase. Para fijar medidas propias usa **Quiebre largo** (tramo inclinado) y **Quiebre ancho** (desfase), en cm; vacío = medida ideal. Para cambiar un quiebre ya dibujado: selecciónalo con Mover, ve a *Barras F* y cambia los valores.
