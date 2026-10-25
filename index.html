@@ -1855,6 +1855,7 @@ let rectRadiusCm = 0; // en cm
 // Cámara (Zoom y Paneo)
 let cleanView=false,cleanCamera=null;
 let zoom = 1;
+const MAX_ZOOM = 10; // 1000 %: el dibujo es vectorial y se redibuja nítido a cualquier escala
 let panX = 40;
 let panY = 30;
 let isPanning = false;
@@ -2031,7 +2032,7 @@ function drawRedMargins(c, viewZoom = zoom) {
   c.restore();
 }
 
-function renderBgLayers(c) {
+function renderBgLayers(c, sharp) {
   const w = sheetWidth, h = sheetHeight;
   for (const l of layers) {
     if (!l.visible || !l.image) continue;
@@ -2048,6 +2049,9 @@ function renderBgLayers(c) {
     const ox = l.offsetX || 0;
     const oy = l.offsetY || 0;
     c.drawImage(l.image, (w - iw) / 2 + ox, (h - ih) / 2 + oy, iw, ih);
+    // Zoom alto: encima va la zona visible del PDF renderizada a la resolución de la pantalla.
+    const dt = sharp && l.detail;
+    if (dt && dt.key === pdfDetailKey(l)) c.drawImage(dt.canvas, dt.x, dt.y, dt.w, dt.h);
     c.restore();
   }
 }
@@ -2063,7 +2067,7 @@ function paintBackground() {
 
   applyCameraTransform(bgCtx);
   drawPaperSheet(bgCtx);
-  renderBgLayers(bgCtx);
+  renderBgLayers(bgCtx, true);
   drawRedMargins(bgCtx);
 }
 
@@ -2880,6 +2884,58 @@ function render() {
   drawPreview();
   updateUI();
   updateRulerPosition();
+  schedulePdfDetail();
+}
+
+// ---- PDF nítido con zoom alto ----
+// La página se carga una vez con resolución limitada (memoria). Cuando el zoom pide más
+// detalle que esa imagen, se vuelve a renderizar solo la zona visible a la escala de la
+// pantalla, un momento después de que el zoom o el paneo se detienen.
+let pdfDetailTimer = 0, pdfDetailRun = 0;
+function pdfDetailKey(l) {
+  return [l.pageNumber, l.scale || 1, l.offsetX || 0, l.offsetY || 0, sheetWidth, sheetHeight].join('|');
+}
+function schedulePdfDetail() {
+  clearTimeout(pdfDetailTimer);
+  if (!layers.some(l => l.pdf && l.visible && l.image)) return;
+  pdfDetailTimer = setTimeout(refreshPdfDetail, 180);
+}
+async function refreshPdfDetail() {
+  const r = paper.getBoundingClientRect();
+  if (!(r.width > 0 && r.height > 0)) return;
+  const run = ++pdfDetailRun, w = sheetWidth, h = sheetHeight, k = zoom * ratio;
+  for (const l of layers) {
+    if (!l.pdf || !l.visible || !l.image) { if (l.detail && !l.visible) l.detail = null; continue; }
+    const sc = Math.min(w / l.image.width, h / l.image.height) * (l.scale || 1);
+    const iw = l.image.width * sc, ih = l.image.height * sc;
+    const lx = (w - iw) / 2 + (l.offsetX || 0), ly = (h - ih) / 2 + (l.offsetY || 0);
+    // ¿La imagen base ya alcanza? (píxeles de imagen por píxel de pantalla)
+    if (l.image.width / iw >= k * 0.95) { if (l.detail) { l.detail = null; render(); } continue; }
+    // Zona visible = pantalla ∩ página ∩ hoja, en coordenadas del mundo
+    const vx0 = Math.max(-panX / zoom, lx, 0), vy0 = Math.max(-panY / zoom, ly, 0);
+    const vx1 = Math.min((r.width - panX) / zoom, lx + iw, w), vy1 = Math.min((r.height - panY) / zoom, ly + ih, h);
+    if (vx1 <= vx0 || vy1 <= vy0) continue;
+    const key = pdfDetailKey(l), req = [key, k.toFixed(4), vx0.toFixed(1), vy0.toFixed(1), vx1.toFixed(1), vy1.toFixed(1)].join('/');
+    if (l.detail && l.detail.req === req) continue;
+    // Escala de render, con tope de ~12 MP para no agotar la memoria del iPad
+    let kk = k;
+    const area = (vx1 - vx0) * (vy1 - vy0) * kk * kk;
+    if (area > 12e6) kk *= Math.sqrt(12e6 / area);
+    try {
+      const page = await l.pdf.getPage(l.pageNumber);
+      if (run !== pdfDetailRun) return;
+      const native = page.getViewport({ scale: 1 });
+      const s = (iw / native.width) * kk;
+      const vp = page.getViewport({ scale: s, offsetX: -(vx0 - lx) * kk, offsetY: -(vy0 - ly) * kk });
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.ceil((vx1 - vx0) * kk));
+      cv.height = Math.max(1, Math.ceil((vy1 - vy0) * kk));
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      if (run !== pdfDetailRun) return;
+      l.detail = { canvas: cv, x: vx0, y: vy0, w: cv.width / kk, h: cv.height / kk, key, req };
+      paintBackground();
+    } catch (e) { /* sin detalle: queda la imagen base */ }
+  }
 }
 
 function updateUI() {
@@ -2979,7 +3035,7 @@ function setZoomAround(newZoom, clientX, clientY) {
   const mouseX = clientX !== undefined ? clientX - r.left : r.width / 2;
   const mouseY = clientY !== undefined ? clientY - r.top : r.height / 2;
 
-  const targetZoom = Math.max(0.08, Math.min(5.0, newZoom));
+  const targetZoom = Math.max(0.08, Math.min(MAX_ZOOM, newZoom));
   if (Math.abs(targetZoom - zoom) < 0.001) return;
 
   panX = mouseX - (mouseX - panX) * (targetZoom / zoom);
@@ -3750,7 +3806,7 @@ ink.addEventListener('pointermove', e => {
 
       let targetZoom = pinchStartZoom;
       if (!isPureParallelPan) {
-        targetZoom = Math.max(0.18, Math.min(5.0, pinchStartZoom * distRatio));
+        targetZoom = Math.max(0.18, Math.min(MAX_ZOOM, pinchStartZoom * distRatio));
       }
 
       panX = curCenterX - (pinchStartCenter.x - pinchStartPan.x) * (targetZoom / pinchStartZoom);
