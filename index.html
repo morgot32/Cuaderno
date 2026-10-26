@@ -1230,6 +1230,7 @@ body.clean-view .workspace{height:100dvh!important;padding:0!important;gap:0}bod
 .paper-wrap:fullscreen .paper,.paper-wrap.canvas-fullscreen .paper{width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
 body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);z-index:1000;padding:6px;gap:6px;max-width:calc(100vw - 16px);box-sizing:border-box}
 .canvas-actions .dock-action{width:auto;padding:6px 10px;white-space:nowrap;height:32px;background:#e8ece5;font-size:12px}
+.canvas-actions #zoomMaxBtn{width:auto;min-width:48px;padding:0 5px;font-size:11px;color:#175e45;background:#e5f2e9}
 @media(max-width:480px){.paper-wrap:fullscreen,.paper-wrap.canvas-fullscreen{padding-bottom:100px!important}body .zoom-overlay.canvas-actions{gap:3px;padding:4px;flex-wrap:wrap;justify-content:center;width:max-content}.canvas-actions .zoom-btn{flex-shrink:0}.canvas-actions .dock-action{font-size:11px;padding:6px}.canvas-actions .viewport-divider{display:none}}
 </style></head>
 <body>
@@ -1636,6 +1637,7 @@ body .zoom-overlay.canvas-actions{position:fixed;bottom:max(12px,env(safe-area-i
         <button class="zoom-btn" id="zoomOutBtn" title="Alejar (-)">−</button>
         <span class="zoom-value" id="zoomValueBtn" title="Restablecer escala al 100%">100%</span>
         <button class="zoom-btn" id="zoomInBtn" title="Acercar (+)">+</button>
+        <button class="zoom-btn" id="zoomMaxBtn" title="Ir al 1000 %" aria-label="Zoom al 1000 %">1000%</button>
         <button class="zoom-btn" id="zoomResetBtn" title="Ajustar y centrar papel en pantalla" style="font-size:10px">⛶</button>
         <button class="zoom-btn dock-action" id="canvasFullscreen" title="Pantalla completa (F3 o Mayús+F)">⛶ Pantalla completa</button>
         <button class="zoom-btn dock-action" id="canvasHelp">Atajos</button>
@@ -3024,7 +3026,9 @@ function resize() {
   }
 
   if (previousViewport && mobileModeEnabled && (Math.abs(previousViewport.width-r.width)>2 || Math.abs(previousViewport.height-r.height)>2)) {
-    resetView();
+    const centerX=(previousViewport.width/2-panX)/zoom,centerY=(previousViewport.height/2-panY)/zoom;
+    panX=r.width/2-centerX*zoom;panY=r.height/2-centerY*zoom;
+    render();
   } else render();
   previousViewport = {width:r.width, height:r.height};
   placeCalibrationTarget();
@@ -3133,6 +3137,7 @@ $('#showRedMargin').onchange = e => {
 
 $('#zoomInBtn').onclick = () => setZoomAround(zoom * 1.25);
 $('#zoomOutBtn').onclick = () => setZoomAround(zoom / 1.25);
+$('#zoomMaxBtn').onclick = () => setZoomAround(MAX_ZOOM);
 $('#zoomValueBtn').onclick = () => {
   const r = paper.getBoundingClientRect();
   setZoomAround(1.0, r.left + r.width / 2, r.top + r.height / 2);
@@ -5519,7 +5524,6 @@ $('#pressureSensitivity').oninput = e => { pressureSensitivity=Number(e.target.v
 // Inicialización de la aplicación
 new ResizeObserver(resize).observe(paper);
 renderLayerUI();
-setTimeout(resetView, 80);
 </script>
 <script>
 // Sesiones editables: formato portable y copia local en IndexedDB.
@@ -5594,7 +5598,7 @@ function makeSession() {
     paper:{width:sheetWidth,height:sheetHeight,preset:currentSheetPreset,pattern:paperPattern,color:paperColor,colorName:paperColorName,margin:showRedMargin},
     brush:{tool,color,size,opacity:inkOpacity,pressure:pressureEnabled,sensitivity:pressureSensitivity},
     observations, workspaceTools:{eraserByObject,eraserDiameter,profilePreset,profileHatch,parallelCount},
-    camera:{zoom,panX,panY},activeInk,selectedBgLayer,nextStrokeId,
+    camera:{zoom,panX,panY,viewportW:paper.clientWidth,viewportH:paper.clientHeight},activeInk,selectedBgLayer,nextStrokeId,
     ink:inkLayers.map(l=>({name:l.name,opacity:l.opacity,visible:l.visible,strokes:l.strokes.map(sessionStroke),future:l.future.map(sessionStroke)})),
     backgrounds,documents};
 }
@@ -5649,7 +5653,14 @@ async function restoreSession(data) {
     document.querySelectorAll('[data-bg]').forEach(x=>x.setAttribute('aria-pressed',false));
     setTool(['pen','graphite','marker','highlighter','watercolor','vector','line','circle','ellipse','rect','frect','taper','pluma','text','pan','select','eraser','blend','curve','arrow','cloud','bucket','profile'].includes(b.tool)?b.tool:'pen');
     setPattern(p.pattern);renderLayerUI();resetView();
-    if(!mobileModeEnabled&&data.camera&&[data.camera.zoom,data.camera.panX,data.camera.panY].every(Number.isFinite)){zoom=Math.max(.08,Math.min(5,data.camera.zoom));panX=data.camera.panX;panY=data.camera.panY;render();}
+    if(data.camera&&data.camera.zoom>0&&[data.camera.zoom,data.camera.panX,data.camera.panY].every(Number.isFinite)){
+      const r=paper.getBoundingClientRect(),savedW=Number.isFinite(data.camera.viewportW)&&data.camera.viewportW>0?data.camera.viewportW:r.width;
+      const savedH=Number.isFinite(data.camera.viewportH)&&data.camera.viewportH>0?data.camera.viewportH:r.height;
+      const centerX=(savedW/2-data.camera.panX)/data.camera.zoom,centerY=(savedH/2-data.camera.panY)/data.camera.zoom;
+      zoom=Math.max(.08,Math.min(MAX_ZOOM,data.camera.zoom));
+      panX=r.width/2-centerX*zoom;panY=r.height/2-centerY*zoom;
+      render();
+    }
   } finally {sessionRestoring=false;}
   notice('Sesión recuperada con sus capas y trazos editables.');
 }
@@ -5708,8 +5719,8 @@ $('#closeInstallHelp').onclick=()=>$('#installHelp').close();
 if('serviceWorker' in navigator && location.protocol==='https:')navigator.serviceWorker.register('./sw.js').catch(()=>{});
 (async()=>{
   $('#sessionLoading').hidden=false;
-  try {const data=await sessionStore('readonly');if(data){await restoreSession(data);$('#sessionState').textContent='Sesión: copia local recuperada';}else $('#sessionState').textContent='Sesión: lista para guardar';}
-  catch(error){$('#sessionState').textContent='Copia local no disponible: usa Guardar sesión';}
+  try {const data=await sessionStore('readonly');if(data){await restoreSession(data);$('#sessionState').textContent='Sesión: copia local recuperada';}else{resetView();$('#sessionState').textContent='Sesión: lista para guardar';}}
+  catch(error){resetView();$('#sessionState').textContent='Copia local no disponible: usa Guardar sesión';}
   finally {sessionRestoring=false;$('#sessionLoading').hidden=true;}
 })();
 

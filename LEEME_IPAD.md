@@ -11,7 +11,7 @@
 - La primera vez con Internet se guardan las tipografías y pdf.js; después funcionan sin conexión.
 
 ## Cambios recientes
-- **Zoom hasta 1000 %:** con la rueda, los botones − ＋ o pellizcando. Los trazos, figuras, barras y textos se redibujan nítidos a cualquier escala. Los PDF de fondo se vuelven a renderizar en alta resolución en la zona visible un instante después de que dejas de hacer zoom o de desplazarte. (Las fotos de fondo y el Relleno con tarro siguen dependiendo de su resolución propia.)
+- **Zoom hasta 1000 %:** con la rueda, los botones − ＋, el botón 1000 % o pellizcando. El zoom y la zona enfocada se recuperan al volver a abrir la sesión, también en iPad. Los trazos, figuras, barras y textos se redibujan nítidos a cualquier escala. Los PDF de fondo se vuelven a renderizar en alta resolución en la zona visible un instante después de que dejas de hacer zoom o de desplazarte. (Las fotos de fondo y el Relleno con tarro siguen dependiendo de su resolución propia.)
 - **Panel de capas redimensionable:** arrastra la esquina inferior derecha, o usa los botones − ＋ del encabezado. Doble toque en la esquina vuelve al tamaño original. El tamaño se recuerda.
 - **Goma y mezclador por capa:** ya no borran la tinta de las capas de abajo, ni dejan huecos en el papel al exportar.
 - **Lienzo personalizado:** las medidas se ingresan en cm (2 a 100).

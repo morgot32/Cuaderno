@@ -4,7 +4,7 @@
 //    (la versión nueva aparece la próxima vez que abras la app).
 //  · Tipografías de Google y pdf.js: se guardan la primera vez que hay Internet.
 //  · Las llamadas a Gemini nunca pasan por aquí.
-const SHELL = 'cuaderno-shell-v2';
+const SHELL = 'cuaderno-shell-v3';
 const EXTRA = 'cuaderno-extra-v1';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const CDN_HOSTS = ['cdnjs.cloudflare.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
